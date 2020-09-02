@@ -1,0 +1,80 @@
+import os, sys, socket
+
+# set directories depending on machine
+hostname = socket.gethostname()
+
+if hostname=='tianx-pc':
+    homeDir = '/analyse/cdhome/'
+    projDir = '/analyse/Project0257/'
+elif hostname[0:7]=='deepnet':
+    homeDir = '/home/chrisd/'
+    projDir = '/analyse/Project0257/'
+
+# get Tian's ResNet 10 architecture
+sys.path.append(os.path.abspath(homeDir+'dlfaceScripts/'))
+
+import numpy as np
+import pandas as pd
+import scipy.io
+import matplotlib.pyplot as plt
+from tripletlossModel import learn, text_to_df, createDataGenBeta
+
+'''
+txtPth = projDir+'tripletTxtLists/randAlloc/'
+ths_anchor_df, ths_positive_df, ths_negative_df = txt_to_df(txtPth,'val')
+thsGenerator = createDataGenBeta(ths_anchor_df, ths_positive_df, ths_negative_df, 10)
+thsAnchors, thsPositives, thsNegatives, dummY = next(thsGenerator)
+# sanity check of synchronous shuffling via seed
+fig, axs = plt.subplots(2, 3)
+axs[0, 0].imshow(thsAnchors[0,:,:,:])
+axs[0, 1].imshow(thsPositives[0,:,:,:])
+axs[0, 2].imshow(thsNegatives[0,:,:,:])
+axs[1, 0].imshow(thsAnchors[1,:,:,:])
+axs[1, 1].imshow(thsPositives[1,:,:,:])
+axs[1, 2].imshow(thsNegatives[1,:,:,:])
+plt.setp(plt.gcf().get_axes(), xticks=[], yticks=[])
+plt.show()
+
+fig.set_size_inches(20, 30)
+fig.savefig('/home/chrisd/ownCloud/FiguresDlFace/tripletLossGeneratorTest.png')
+'''
+
+txtPth = projDir+'tripletTxtLists/randAlloc/'
+saveFilePth = projDir+'/tripletLossModels/randAlloc/prerefine/test1'
+outPth = saveFilePth
+embSize = 64
+batch = 100
+nBatchPerChunk = 10
+nTrainChunks = 20
+nValChunks = 3
+nEpochs = 2
+initialLr = .001
+
+learn(txtPth=txtPth,
+    outPth=outPth,
+    embSize=embSize, # including this line, the following arguments have defaults
+    batch=batch,
+    nBatchPerChunk=nBatchPerChunk,
+    nTrainChunks=nTrainChunks,
+    nValChunks=nValChunks,
+    nEpochs=nEpochs,
+    initialLr=initialLr)
+
+
+# create list of inputs
+txtPth = projDir+'tripletTxtLists/randAlloc/'
+saveFilePth = projDir+'/tripletLossModels/randAlloc/refined/test1'
+outPth = saveFilePth
+initialLr = .00001
+
+# trigger triplet loss training
+learn(txtPth=txtPth,
+    outPth=outPth,
+    embSize=embSize, # including this line, the following arguments have defaults
+    batch=batch,
+    nBatchPerChunk=nBatchPerChunk,
+    nTrainChunks=nTrainChunks,
+    nValChunks=nValChunks,
+    nEpochs=nEpochs,
+    preTrained=projDir+'/tripletLossModels/randAlloc/prerefine/test1_epoch1.h5',
+    initialLr=initialLr)

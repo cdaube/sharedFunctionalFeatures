@@ -1,0 +1,97 @@
+import sys, os, socket
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
+hostname = socket.gethostname()
+
+if hostname=='tianx-pc':
+    homeDir = '/analyse/cdhome/'
+    proj0257Dir = '/analyse/Project0257/'
+elif hostname[0:7]=='deepnet':
+    homeDir = '/home/chrisd/'
+    proj0257Dir = '/analyse/Project0257/'
+
+import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt
+from PIL import Image
+from keras.preprocessing.image import ImageDataGenerator
+from keras.callbacks import ModelCheckpoint, TensorBoard, ProgbarLogger
+from io import StringIO
+import h5py
+
+sys.path.append(os.path.abspath(homeDir+'dlfaceScripts/SchynsLabDNN/faceNets/'))
+from resNetUtils import getActVAE
+from vae_models import ResNet10Encoder, ResNet10Decoder, Darknet19Encoder, Darknet19Decoder
+from vae import AutoEncoder
+
+
+dataDir = proj0257Dir+'christoph_face_render_withAUs_20190730/'
+main_data_txt = dataDir+'images_firstGen_ctrlSim_k1/path/linksToImages.txt'
+main_df = pd.read_csv(main_data_txt, delim_whitespace = True, header=None)
+main_df.columns = ['filename', 'yID', 'yVector', 'yGender', 'yEthn', 'yAge', 'yEmo', 'yAnglex', 'yAngley', 'yAnglelx', 'yAnglely']
+main_df = main_df[['filename']]
+
+maintrain_df = main_df.sample(frac=0.9,random_state=1)
+test_df = main_df.drop(maintrain_df.index)
+train_df = maintrain_df.sample(frac=0.8,random_state=1)
+val_df = maintrain_df.drop(train_df.index)
+
+inputShape = (224, 224, 3)
+batchSize = 50
+latentSize = 512
+epochs = 100
+
+for beta in [1]: #[1,2,5,10,20]:
+    
+    # build and compile the autoencoder
+    encoder = ResNet10Encoder(inputShape, latentSize=latentSize, latentConstraints='bvae', beta=beta)
+    decoder = Darknet19Decoder(inputShape, latentSize=latentSize)
+    bvae = AutoEncoder(encoder, decoder)
+    bvae.ae.compile(optimizer='adam', loss='mean_absolute_error')
+    
+    bvae.ae.load_weights(proj0257Dir+'aeModels/1stGen/001530SimStructk1ColleaguesRN10DN19beta'+str(beta)+'.h5')
+    
+    # define source path
+    basePth = proj0257Dir+'christoph_face_render_withAUs_20190730/colleaguesRandomJiayu/'
+    # define other constants
+    genderTxt = ['f','m']
+    nBatch = 9
+    
+    for gg in range(2):
+        for id in range(2):
+                for rr in range(2):
+                    for cc in range(3):
+                        
+                        print('beta '+str(beta)+' gg '+str(gg+1)+' id '+str(id+1)+' rr '+str(rr+1)+' cc '+str(cc+1))
+                        ths_txt = basePth+genderTxt[gg]+'/id'+str(id+1)+'/linksToImages_array_'+str(rr+1)+'_'+str(cc+1)+'.txt'
+                        
+                        ths_df = pd.read_csv(ths_txt, delim_whitespace = True, header=None)
+                        ths_df.columns = ['filename', 'yID', 'yVector', 'yGender', 'yEthn', 'yAge', 'yEmo', 'yAnglex', 'yAngley', 'yAnglelx', 'yAnglely']
+                        ths_df = ths_df[['filename']]
+                        test_datagen = ImageDataGenerator(rescale=1./255)
+                        ths_generator = test_datagen.flow_from_dataframe(
+                            dataframe=ths_df,
+                            target_size=(inputShape[0],inputShape[1]),
+                            directory='/',
+                            x_col='filename',
+                            class_mode='input',
+                            validate_filenames=False,
+                            shuffle=False,
+                            batch_size=int(ths_df.shape[0]/nBatch))
+                        
+                        for bb in range(nBatch):
+                            print('loading batch '+str(bb))
+                            thsBatch, thsLabels = next(ths_generator)
+                            print('evaluating model ... ')    
+                            latentVec = bvae.encoder.predict_on_batch(thsBatch)
+
+                            thsDestinDir = proj0257Dir+'humanReverseCorrelation/activations/vae/trialsRandom/beta'+str(beta)+'/'+genderTxt[gg]+'/id'+str(id+1)+'/row'+str(rr+1)+'/col'+str(cc+1)+'/'
+
+                            print('saving layer activations')
+                            getActVAE(bvae.encoder, thsBatch, thsDestinDir, startLayer=0, batchNr=bb)
+
+                            #print('saving latent vectors')
+                            #thsFileName = thsDestinDir+'latent_batch_'+str(bb+1)+'.h5'
+                            #hf = h5py.File((thsFileName), 'w')
+                            #hf.create_dataset('latentVec', data=latentVec)
+                            #hf.close()
+
