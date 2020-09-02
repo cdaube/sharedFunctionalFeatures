@@ -1199,7 +1199,51 @@ fig.PaperSize = [40 20];
 print(fig,'-dpdf','-r300',[figDir 'S2_allFeatureSpaces.pdf'],'-opengl')
     
 
-%% Figure S3: trivariate evaluation
+%% Figure S3: choice behaviour of models
+
+proj0257Dir = '/analyse/Project0257/';
+load([proj0257Dir '/humanReverseCorrelation/fromJiayu/extractedBehaviouralData.mat'], ...
+	'fileNames','chosenImages','chosenRow','chosenCol','systemsRatings')
+
+nColl = 4;
+stack = @(x) x(:);
+stack2 = @(x) x(:,:);
+acc = squeeze(mean(bsxfun(@eq,chosenImages(:,:,:,1),chosenImages(:,:,:,[14 15 19 16 17 18]))));
+toSpread = stack2(permute(acc,[3 1 2]))';
+jMap = [.9 0 0; 0 .6 0; 0 .4 .8; 1 .9 0];
+mrkFcAlpha = .5;
+mdnWdth = .35;
+lW = 1;
+
+distIdx = repmat(1:size(toSpread,2),[size(toSpread,1) 1]);
+catIdx = stack(repmat((1:nColl)',[size(toSpread,1)/nColl size(toSpread,2)]));
+hps = plotSpread(toSpread,'distributionIdx',distIdx(:),'categoryIdx',catIdx(:),'CategoryColors',jMap);
+for ii = 1:numel(hps{1}); hps{1}{ii}.MarkerFaceAlpha = mrkFcAlpha; end
+hold on
+thsMn = nanmedian(toSpread);
+for mm = 1:numel(thsMn)
+    mh1 = plot([mm-mdnWdth mm+mdnWdth],[thsMn(mm) thsMn(mm)],'Color','k','LineWidth',lW);
+end
+ch1 = plot([0 7],[1/6 1/6],'--k');
+hold off
+ylim([0 .6])
+xlim([.5 6.5])
+lh = legend([hps{1}{1,1}, hps{1}{1,2}, hps{1}{1,3}, hps{1}{1,4}, mh1 ch1], ...
+        'Colleague 1','Colleague 2','Colleague 3','Colleague 4','pooled median','chance level','location','southeast');
+legend boxoff
+ylabel('Accuracy')
+set(gca,'XTickLabel',{'Shape','Texture','Triplet_{emb}','ClassID_{emb}','ClassMulti_{emb}','VAE_{emb}'})
+
+figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
+fig = gcf;
+fig.Color = [1 1 1];
+fig.InvertHardcopy = 'off';
+fig.PaperUnits = 'centimeters';
+fig.PaperPosition = [0 0 15 15];
+fig.PaperSize = [15 15];
+print(fig,'-dpdf','-r300',[figDir 'S3_choiceBehaviour.pdf'],'-opengl')
+
+%% Figure S4: trivariate evaluation
 load('/analyse/Project0257/humanReverseCorrelation/comparisonReconOrig/compReconOrig_wPanel_respHat.mat',...
     'mi3DGlobalSha','mi3DLocalSha','mi1DGlobalSha','mi1DLocalSha','mi1DHuSysGlobalSha','mi1DHuSysLocalSha', ...
     'corrsSha','mseSha','inOutOrig','inOutRecon','inOutOrigRecon','inOutVarRecon','relVert', ...
@@ -1365,4 +1409,4 @@ fig.InvertHardcopy = 'off';
 fig.PaperUnits = 'centimeters';
 fig.PaperPosition = [0 0 40 25];
 fig.PaperSize = [40 25];
-print(fig,'-dpdf','-r300',[figDir 'F5_reverseRegression_trivar_respHat.pdf'],'-opengl')
+print(fig,'-dpdf','-r300',[figDir 'S4_reverseRegression_trivar_respHat.pdf'],'-opengl')
