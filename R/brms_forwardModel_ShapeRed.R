@@ -10,6 +10,8 @@
   }else if (thsNodename =="mat"){
     rootDir <- "/analyse/"
   }else if (thsNodename =="tia"){
+    rootDir <- "/analyse/"
+  }else if (thsNodename =="dee"){
     rootDir <- "/analyse/"}
   
   # set other folders
@@ -22,17 +24,26 @@
   thsTable <- readMat(paste(rootDir,sourceFolder,fileNameSource,sep = ""))
   thsTable <- data.frame(Reduce(rbind, thsTable))
   names(thsTable) <- c("fold","coll","pps","fspc",
-                  "triplet","classID","classMulti","VAE","R")
+                  "pixelPCA","triplet","classID","classMulti","AE","viAE","R")
   
 
   #if(FALSE) {
   # brms
   brmsModel <- brm(R ~ 0 + (1|fspc:pps) + (1|fold:pps) + (1|coll:pps) +
-                     triplet + classID + classMulti + VAE,
+                     pixelPCA + triplet + classID + classMulti + AE + viAE,
                    data = thsTable, family = gaussian(),
                    cores = 4, iter = 5000, chains = 4, warmup = 1000,
                    control = list(adapt_delta = .95, max_treedepth = 15))
   
+  
+  png(file="M_shapeRed_chains.png")
+  plot(brmsModel, ask = FALSE, N = 15)
+  dev.off()
+
+  png(file="M_shapeRed_ppCheck.png")
+  pp_check(brmsModel)
+  dev.off()
+
   # save brms fit ...
   brmsFit <- brmsModel$fit
   extractedFit <- extract(brmsFit)
@@ -45,7 +56,7 @@
   
   # hypotheses
   load(paste(rootDir,destinFolder,"brmsModel_forwardModelShapeRed.rda",sep = ""))
-  H <- hypothesis(brmsModel, "b_VAE - b_classMulti > 0", class = NULL)
+  H <- hypothesis(brmsModel, "b_AE - b_classMulti > 0", class = NULL)
   H <- hypothesis(brmsModel, "b_classMulti - b_classID > 0", class = NULL)
   H <- hypothesis(brmsModel, "b_classID - b_classMulti > 0", class = NULL)
 
@@ -53,9 +64,9 @@
   
   colMeans(H$samples > 0)
   
-  featureSpaces <- c("triplet","classID","classMulti","VAE");
+  featureSpaces <- c("pixelPCA","triplet","classID","classMulti","AE","viAE")
   
-  nFspc <- 4
+  nFspc <- length(featureSpaces)
   evidenceRatios <- matrix(data=0,nrow=nFspc,ncol=nFspc)
   pp <- matrix(data=0L,nrow=nFspc,ncol=nFspc)
   for (fspc1 in 1:nFspc){

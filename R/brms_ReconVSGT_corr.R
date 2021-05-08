@@ -17,18 +17,18 @@
   destinFolder <- "Project0257/humanReverseCorrelation/rModels/"
   outputFolder <- "Project0257/humanReverseCorrelation/rOutput/"
   
-  fileNameSource <- paste("ReconVsGT_corr.mat", sep = "")
+  fileNameSource <- paste("ReconVsVerid_corr.mat", sep = "")
   # load data, create data frame, name variables
   thsTable <- readMat(paste(rootDir,sourceFolder,fileNameSource,sep = ""))
   thsTable <- data.frame(Reduce(rbind, thsTable))
-  names(thsTable) <- c("coll","pps","fspc","human","shape","texture",
-                  "triplet","ClassID","ClassMulti","VAE","r")
+  names(thsTable) <- c("coll","pps","fspc","human","texture","shape","PCA",
+                  "triplet","ClassID","ClassMulti","AE","viAE","r")
   
 
   #if(FALSE) {
   # brms
   brmsModel <- brm(r ~ 0 + (1|fspc:pps) + (1|coll:pps) + 
-                      human + shape + texture + triplet + ClassID + ClassMulti + VAE,
+                      human + PCA + shape + texture + triplet + ClassID + ClassMulti + AE + viAE,
                    data = thsTable, family = gaussian(),
                    cores = 4, iter = 5000, chains = 4, warmup = 1000,
                    control = list(adapt_delta = .95, max_treedepth = 15))
@@ -45,16 +45,16 @@
   
   # hypotheses
   load(paste(rootDir,destinFolder,"brmsModel_ReconVSGTcorr.rda",sep = ""))
-  H <- hypothesis(brmsModel, "b_VAE - b_ClassID > 0", class = NULL)
-  H <- hypothesis(brmsModel, "b_VAE - b_ClassMulti > 0", class = NULL)
-  H <- hypothesis(brmsModel, "b_VAE - b_human > 0", class = NULL)
+  H <- hypothesis(brmsModel, "b_AE - b_ClassID > 0", class = NULL)
+  H <- hypothesis(brmsModel, "b_AE - b_ClassMulti > 0", class = NULL)
+  H <- hypothesis(brmsModel, "b_AE - b_human > 0", class = NULL)
   H <- hypothesis(brmsModel, "b_shape - b_human > 0", class = NULL)
 
   colMeans(H$samples > 0)
   
-  featureSpaces <- c("human","shape","texture","triplet","ClassID","ClassMulti","VAE");
+  featureSpaces <- c("human","PCA","shape","texture","triplet","ClassID","ClassMulti","AE","viAE");
   
-  nFspc <- 7
+  nFspc <- length(featureSpaces)
   evidenceRatios <- matrix(data=0,nrow=nFspc,ncol=nFspc)
   pp <- matrix(data=0L,nrow=nFspc,ncol=nFspc)
   for (fspc1 in 1:nFspc){

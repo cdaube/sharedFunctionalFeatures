@@ -22,23 +22,48 @@
   thsTable <- readMat(paste(rootDir,sourceFolder,fileNameSource,sep = ""))
   thsTable <- data.frame(Reduce(rbind, thsTable))
   names(thsTable) <- c("fold","coll","pps","fspc",
-                  "pca","texture","shape","triplet","classID","classMulti","VAE",
-                  "VAE10","VAEshape",
-                  "deltaTriplet","deltaClassID","deltaClassMulti","deltaVAE",
-                  "dnClassID","dnClassMulti","dnClassVAEl0","dnClassVAEl2",
-                  "mib")
+                       "Texture","Shape","pixelPCA","ShapeANDTexture","ShapeANDpixelPCA", 
+                       "Triplet_emb","ClassID_emb","ClassMulti_emb","AE_emb","viAE_emb","VAE_emb","beta10VAE_emb", 
+                       "ShapeANDAE_emb","ShapeANDviAE_emb","ShapeANDbeta1VAE_emb","ShapeANDClassMulti_embANDbeta1VAE",
+                       "ShapeANDTextureANDAE_emb","ShapeANDTextureANDviAE_emb", 
+                       "Texture_delta","Shape_delta","pixelPCA_delta","Triplet_delta","ClassID_delta",
+                       "ClassMulti_delta","AE_delta","viAE_delta","beta1VAE_delta",
+                       "ShapeVertex_delta","TexturePixel_delta", 
+                       "Texture_deltalincomb","Shape_deltalincomb","pixelPCA_deltalincomb","Triplet_deltalincomb", 
+                       "ClassID_deltalincomb","ClassMulti_deltalincomb","AE_deltalincomb", 
+                       "viAE_deltalincomb","beta1VAE_deltalincomb", 
+                       "ClassID_dn","ClassMulti_dn","VAE_ldn","VAE_nldn","mib")
+                      
   
 
   #if(FALSE) {
   # brms
   brmsModel <- brm(mib ~ 0 + (1|fspc:pps) + (1|fold:pps) + (1|coll:pps) +
-                     pca + texture + shape + triplet + classID + classMulti + VAE +
-                     VAE10 + VAEshape + deltaTriplet + deltaClassID + deltaClassMulti + deltaVAE + 
-                     dnClassID + dnClassMulti + dnClassVAEl0 + dnClassVAEl2,
+                     Texture + Shape + pixelPCA + ShapeANDTexture + ShapeANDpixelPCA +
+                     Triplet_emb + ClassID_emb + ClassMulti_emb + AE_emb + viAE_emb + VAE_emb + beta10VAE_emb +
+                     ShapeANDAE_emb + ShapeANDviAE_emb + ShapeANDbeta1VAE_emb + ShapeANDClassMulti_embANDbeta1VAE +
+                     ShapeANDTextureANDAE_emb + ShapeANDTextureANDviAE_emb +
+                     Texture_delta + Shape_delta + pixelPCA_delta + Triplet_delta + ClassID_delta +
+                     ClassMulti_delta + AE_delta + viAE_delta + beta1VAE_delta +
+                     ShapeVertex_delta + TexturePixel_delta +
+                     Texture_deltalincomb + Shape_deltalincomb + pixelPCA_deltalincomb + Triplet_deltalincomb +
+                     ClassID_deltalincomb + ClassMulti_deltalincomb + AE_deltalincomb +
+                     viAE_deltalincomb + beta1VAE_deltalincomb +
+                     ClassID_dn + ClassMulti_dn + VAE_ldn + VAE_nldn,
                    data = thsTable, family = gaussian(),
                    cores = 4, iter = 5000, chains = 4, warmup = 1000,
                    control = list(adapt_delta = .95, max_treedepth = 15))
   
+
+  png(file="M_forwardModelMIBAll_chains.png")
+  plot(brmsModel, ask = FALSE, N = 15, N = 50,width=500,height=10000) # thank you Jack E. Taylor for making me aware of the N argument <3
+  dev.off()
+
+  png(file="M_forwardModelMIBAll_ppCheck.png")
+  pp_check(brmsModel)
+  dev.off()
+
+
   # save brms fit ...
   brmsFit <- brmsModel$fit
   extractedFit <- extract(brmsFit)
@@ -51,20 +76,27 @@
   
   # hypotheses
   load(paste(rootDir,destinFolder,"brmsModel_forwardModelMIBAll.rda",sep = ""))
-  H <- hypothesis(brmsModel, "b_VAE - b_classMulti > 0", class = NULL)
-  H <- hypothesis(brmsModel, "b_classMulti - b_classID > 0", class = NULL)
-  H <- hypothesis(brmsModel, "b_classID - b_classMulti > 0", class = NULL)
+  H <- hypothesis(brmsModel, "b_viAE_emb - b_ClassMulti_emb > 0", class = NULL)
+  H <- hypothesis(brmsModel, "b_ClassMulti_emb - b_ClassID_emb > 0", class = NULL)
+  H <- hypothesis(brmsModel, "b_ClassID_emb - b_ClassMulti_emb > 0", class = NULL)
 
 
   
   colMeans(H$samples > 0)
   
-  featureSpaces <- c("pca","texture","shape","triplet","classID","classMulti","VAE",
-                     "VAE10","VAEshape",
-                     "deltaTriplet","deltaClassID","deltaClassMulti","deltaVAE",
-                     "dnClassID","dnClassMulti","dnClassVAEl0","dnClassVAEl2")
+  featureSpaces <- c("Texture","Shape","pixelPCA","ShapeANDTexture","ShapeANDpixelPCA", 
+                       "Triplet_emb","ClassID_emb","ClassMulti_emb","AE_emb","viAE_emb","VAE_emb","beta10VAE_emb", 
+                       "ShapeANDAE_emb","ShapeANDviAE_emb","ShapeANDbeta1VAE_emb","ShapeANDClassMulti_embANDbeta1VAE",
+                       "ShapeANDTextureANDAE_emb","ShapeANDTextureANDviAE_emb", 
+                       "Texture_delta","Shape_delta","pixelPCA_delta","Triplet_delta","ClassID_delta",
+                       "ClassMulti_delta","AE_delta","viAE_delta","beta1VAE_delta",
+                       "ShapeVertex_delta","TexturePixel_delta", 
+                       "Texture_deltalincomb","Shape_deltalincomb","pixelPCA_deltalincomb","Triplet_deltalincomb", 
+                       "ClassID_deltalincomb","ClassMulti_deltalincomb","AE_deltalincomb", 
+                       "viAE_deltalincomb","beta1VAE_deltalincomb", 
+                       "ClassID_dn","ClassMulti_dn","VAE_ldn","VAE_nldn")
   
-  nFspc <- 17
+  nFspc <- length(featureSpaces)
   evidenceRatios <- matrix(data=0,nrow=nFspc,ncol=nFspc)
   pp <- matrix(data=0L,nrow=nFspc,ncol=nFspc)
   for (fspc1 in 1:nFspc){
