@@ -11,3 +11,9 @@ https://github.com/noelcodella/tripletloss-keras-tensorflow
 ## data shared
 stimuli (image files and GMF parameters) as well as responses 
 https://osf.io/7yx28/
+
+## preprint
+https://psyarxiv.com/jv3r2/
+
+## data from
+https://www.nature.com/articles/s41562-019-0625-3
