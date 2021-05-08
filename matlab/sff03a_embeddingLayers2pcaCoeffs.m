@@ -1,5 +1,4 @@
-% this script trains models to decode shape and texture parameters of the
-% GMF from DNN activations and tests them
+% this script decodes shape GMF features (PCA) from network activations
 
 clear
 [~,hostname] = system('hostname');
@@ -57,7 +56,7 @@ nRow = 2;
 nId = 2;
 nGend = 2;
 nColl = 4;
-nFspc = 4;
+nFspc = 6;
 
 stack = @(x) x(:);
 stack2 = @(x) x(:,:);
@@ -85,31 +84,36 @@ end
 
 % load embedding layer activations
 % in order of files
+load([proj0257Dir '/christoph_face_render_withAUs_20190730/colleaguesRandomJiayu/pca512_netTrainWAngles.mat'],'pcaToSave');
+pcaActs = stack2(permute(pcaToSave,[1 2 3 4 6 5]))';
 load('/analyse/Project0257/humanReverseCorrelation/activations/Triplet/trialsRandom/embeddingLayerActs.mat')
 tripletActs = stack2(tripletActs)';
 load('/analyse/Project0257/humanReverseCorrelation/activations/IDonly/trialsRandom/embeddingLayerActs.mat')
 idOnlyActs = stack2(classifierActs)';
 load('/analyse/Project0257/humanReverseCorrelation/activations/multiNet/trialsRandom/embeddingLayerActs.mat')
 multiActs = stack2(classifierActs)';
-load([proj0257Dir '/humanReverseCorrelation/activations/vae/trialsRandom/latentVecs_beta' num2str(1) '.mat'])
-vaeActs = stack2(latentVec)';
+load([proj0257Dir '/humanReverseCorrelation/activations/ae/trialsRandom/latentVecs.mat'])
+aeActs =  stack2(latentVec)';
+load([proj0257Dir '/humanReverseCorrelation/activations/viae10/trialsRandom/latentVecs.mat'])
+viae10Acts =  stack2(latentVec)';
+
+allOrigLatents = cell(6,1);
+load([proj0257Dir '/christoph_face_render_withAUs_20190730/colleaguesRandomJiayu/pca512_netTrainWAngles.mat'],'origLatents');
+allOrigLatents{1} = origLatents;
+allOrigLatents{2} = h5read([proj0257Dir '/results/colleaguesOrigTriplet_act_emb.h5'],['/activations']);
+allOrigLatents{3} = h5read([proj0257Dir '/results/colleaguesOrig_IDonly_act10batch_1.h5'],['/layer10']);
+allOrigLatents{4} = h5read([proj0257Dir '/results/colleaguesOrig_multiNet_act10batch_1.h5'],['/layer10']);
+allOrigLatents{5} = h5read([proj0257Dir '/results/colleaguesOrig_AE_act10batch_1.h5'],['/layer10']);
+allOrigLatents{6} = h5read([proj0257Dir '/results/colleaguesOrig_VIAE10_act10batch_1.h5'],['/layer10']);
 
 
-origLatents = cell(4,1);
-origLatents{1} = h5read([proj0257Dir '/results/colleaguesOrigTriplet_act_emb.h5'],['/activations']);
-origLatents{2} = h5read([proj0257Dir '/results/colleaguesOrig_IDonly_act10batch_1.h5'],['/layer10']);
-origLatents{3} = h5read([proj0257Dir '/results/colleaguesOrig_multiNet_act10batch_1.h5'],['/layer10']);
-tmp = h5read([proj0257Dir '/results/colleaguesOrigVAElatents_beta=[1_2_5_10_20].h5'],['/allLatents']);
-origLatents{4} = squeeze(tmp(:,1,1:4:13));
-
-allIds = repelem((1:4)',1800*3*2);
 
 % random split for training and testing
 traFrac = .8;
 valFrac = .1;
 tesFrac = .1;
 
-allNTrl = size(vaeActs,1);
+allNTrl = size(viae10Acts,1);
 
 rng('default')
 shuffleIdx = randperm(allNTrl)';
@@ -144,10 +148,10 @@ tCoeffHat = zeros(nTesTrl,nCoeff*nTexCoeffDim,nFspc);
 tCoeffHatColl = zeros(nColl,nCoeff*nTexCoeffDim,nFspc);
 tCoeffR2 = zeros(nCoeff*nTexCoeffDim,nFspc);
 
-eucDistsV = zeros(nVert,nColl,nFspc);
-eucDistsT = zeros(nPixX,nPixY,nColl,nFspc);
+eucDistsV = zeros(nVert,nFspc);
+eucDistsV3D = zeros(nVert,nXYZ,nFspc);
 eucDistsVColl = zeros(nVert,nColl,nFspc);
-eucDistsTColl = zeros(nPixX,nPixY,nColl,nFspc);
+eucDistsV3DColl = zeros(nVert,nXYZ,nColl,nFspc);
 
 % reconstruct original colleagues
 vertGT = zeros(nVert,nXYZ,nColl);
@@ -173,18 +177,22 @@ end
 emb2coeffBetasV = cell(nFspc,1);
 emb2coeffBetasT = cell(nFspc,1);
 
-allVertHat = cell(nColl,nFspc);
-
-for fspc = 1:nFspc
+allVertHat = cell(nFspc,1);
+initparclus(12)
+for fspc = 1%:nFspc
     
     if fspc == 1
-        predictors = tripletActs;
+        predictors = pcaActs;
     elseif fspc == 2
-        predictors = idOnlyActs;
+        predictors = tripletActs;
     elseif fspc == 3
-        predictors = multiActs;
+        predictors = idOnlyActs;
     elseif fspc == 4
-        predictors = vaeActs;
+        predictors = multiActs;
+    elseif fspc == 5
+        predictors = aeActs;
+    elseif fspc == 6
+        predictors = viae10Acts;
     end
     
     % shape
@@ -197,7 +205,7 @@ for fspc = 1:nFspc
     yTra = allVCoeffPure(:,traIdx)';
     yVal = allVCoeffPure(:,valIdx)';
     yTes = allVCoeffPure(:,tesIdx)';
-    xColl = [ones(nColl,1) origLatents{fspc}'];
+    xColl = [ones(nColl,1) allOrigLatents{fspc}'];
 
     % set up ridge regression
     nPerFspc = [1 size(predictors,2)];
@@ -227,10 +235,6 @@ for fspc = 1:nFspc
     yTra = allTCoeffPure(:,traIdx)';
     yVal = allTCoeffPure(:,valIdx)';
     yTes = allTCoeffPure(:,tesIdx)';
-        
-    idTra = allIds(traIdx);
-    idVal = allIds(valIdx);
-    idTes = allIds(tesIdx);
 
     % set up ridge regression
     nPerFspc = [1 size(predictors,2)];
@@ -253,63 +257,146 @@ for fspc = 1:nFspc
     % save betas
     emb2coeffBetasT{fspc} = thsBetas;
 
-    % reconstruct predicted and original faces separately for each
-    % colleague (useless because random trials are random, but doesn't 
-    % matter, can just average across later on to give same result as 
-    % without "splitting trials")
-    for thsOuterId = 1:4
-        
-        thsTesSubSet = find(idTes==thsOuterId);
-        
-        % preallocate matrices
-        vertAvg = zeros(nVert,nXYZ,numel(thsTesSubSet));
-        vertOrig = zeros(nVert,nXYZ,numel(thsTesSubSet));
-        vertHat = zeros(nVert,nXYZ,numel(thsTesSubSet));
-        pixAvg = zeros(nPixX,nPixY,nRGB,numel(thsTesSubSet));
-        pixOrig = zeros(nPixX,nPixY,nRGB,numel(thsTesSubSet));
-        pixHat = zeros(nPixX,nPixY,nRGB,numel(thsTesSubSet));
-        
-        for tt = 1:numel(thsTesSubSet)
+    % reconstruct predicted and original faces     
+    % preallocate matrices
+    vertAvg = zeros(nVert,nXYZ,numel(tesIdx));
+    vertOrig = zeros(nVert,nXYZ,numel(tesIdx));
+    vertHat = zeros(nVert,nXYZ,numel(tesIdx));
 
-            if mod(tt,100)==0
-                disp(['fspc ' num2str(fspc) ' tt ' num2str(tt) ' id ' num2str(thsOuterId) ' ' datestr(clock,'HH:MM:SS')])
-            end
+    parfor tt = 1:numel(tesIdx)
 
-            % look up all ingredients
-            [thsTr,thsCol,thsRow,thsId,thsGg] = ind2sub([nTrials nCol nRow nId],tesIdx(thsTesSubSet(tt)));
-            thsCollId = (thsGg-1)*2+thsId;
-            assert(thsCollId==thsOuterId,'colleagues do not match, Check code')
-            thsVCoeffPure = allVCoeffPure(:,thsTr,thsCol,thsRow,thsId,thsGg);
-            thsTCoeffPure = reshape(allTCoeffPure(:,thsTr,thsCol,thsRow,thsId,thsGg),[nCoeff nTexCoeffDim]);
-            % reconstruct original face
-            [vertOrig(:,:,tt), pixOrig(:,:,:,tt)] = generate_person_GLM(bothModels{thsGg},allCVI(:,thsCollId),allCVV(thsGg,thsId), ...
-                thsVCoeffPure,thsTCoeffPure,.6,true);
-            % reconstruct predicted face
-            [vertHat(:,:,tt), pixHat(:,:,:,tt)] = generate_person_GLM(bothModels{thsGg},allCVI(:,thsCollId),allCVV(thsGg,thsId), ...
-                vCoeffHat(thsTesSubSet(tt),:,fspc)',reshape(tCoeffHat(thsTesSubSet(tt),:,fspc),[nCoeff nTexCoeffDim]),.6,true);
-            % reconstruct average
-            [vertAvg(:,:,tt), pixAvg(:,:,:,tt)] = generate_person_GLM(bothModels{thsGg},allCVI(:,thsCollId),allCVV(thsGg,thsId),zeros(355,1),zeros(355,5),.6,true);    
-        
+        if mod(tt,100)==0
+            disp(['fspc ' num2str(fspc) ' tt ' num2str(tt) ' ' datestr(clock,'HH:MM:SS')])
         end
 
-        allVertHat{thsCollId,fspc} = vertHat;
+        % look up all ingredients
+        [thsTr,thsCol,thsRow,thsId,thsGg] = ind2sub([nTrials nCol nRow nId],tesIdx(tt));
+        thsCollId = (thsGg-1)*2+thsId;
+        thsVCoeffPure = allVCoeffPure(:,tesIdx(tt));
+        thsTCoeffPure = reshape(allTCoeffPure(:,tesIdx(tt)),[nCoeff nTexCoeffDim]);
         
-        % evaluate predicted vs original faces 
-        eucDistsV(:,thsCollId,fspc) = mean(sqrt(sum((vertOrig-vertHat).^2,2)),3);
-        eucDistsT(:,:,thsCollId,fspc) = squeeze(mean(sqrt(sum((pixOrig-pixHat).^2,3)),4));
-        
-        % also check colleagues
-        [vertHatColl, pixHatColl] = generate_person_GLM(bothModels{thsGg},allCVI(:,thsCollId),allCVV(thsGg,thsId), ...
-            vCoeffHatColl(thsOuterId,:,fspc)',reshape(tCoeffHatColl(thsOuterId,:,fspc),[nCoeff nTexCoeffDim]),.6,true);        
-        
-        % evaluate predicted vs original faces 
-        eucDistsVColl(:,thsCollId,fspc) = sqrt(sum((vertGT(:,:,thsOuterId)-vertHatColl).^2,2));
-        eucDistsTColl(:,:,thsCollId,fspc) = sqrt(sum((pixGT(:,:,:,thsOuterId)-pixHatColl).^2,3));
-        
+        % reconstruct original face
+        [vertOrig(:,:,tt), ~] = generate_person_GLM(bothModels{thsGg},allCVI(:,thsCollId),allCVV(thsGg,thsId), ...
+            thsVCoeffPure,thsTCoeffPure,.6,true);
+        % reconstruct predicted face
+        [vertHat(:,:,tt), ~] = generate_person_GLM(bothModels{thsGg},allCVI(:,thsCollId),allCVV(thsGg,thsId), ...
+            vCoeffHat(tt,:,fspc)',reshape(tCoeffHat(tt,:,fspc),[nCoeff nTexCoeffDim]),.6,true);
+        % reconstruct average
+        [vertAvg(:,:,tt), ~] = generate_person_GLM(bothModels{thsGg},allCVI(:,thsCollId),allCVV(thsGg,thsId),zeros(355,1),zeros(355,5),.6,true);    
+
+    end
+
+    allVertHat{fspc} = vertHat;
+
+    % evaluate predicted vs original faces 
+    eucDistsV(:,fspc) = mean(sqrt(sum((vertOrig-vertHat).^2,2)),3);
+    eucDistsV3D(:,:,fspc) = mean(abs(vertOrig-vertHat),3);
+
+    for gg = 1:2
+        for id = 1:2
+            
+            thsCollId = (gg-1)*2+id;
+            % also check colleagues
+            [vertHatColl, pixHatColl] = generate_person_GLM(bothModels{gg},allCVI(:,thsCollId),allCVV(gg,id), ...
+                vCoeffHatColl(thsCollId,:,fspc)',reshape(tCoeffHatColl(thsCollId,:,fspc),[nCoeff nTexCoeffDim]),.6,true);
+            
+            % evaluate predicted vs original faces
+            eucDistsVColl(:,thsCollId,fspc) = sqrt(sum((vertGT(:,:,thsCollId)-vertHatColl).^2,2));
+            eucDistsV3DColl(:,:,thsCollId,fspc) = abs(vertGT(:,:,thsCollId)-vertHatColl);
+            
+        end
     end
     
 end
 
+disp(['saving ... ' datestr(clock,'HH:MM:SS')])
 save([proj0257Dir '/embeddingLayers2Faces/embeddingLayers2pcaCoeffs.mat'], ...
-    'eucDistsT','eucDistsV','tCoeffR2','vCoeffR2','cTunT','cTunV','optHypersT','optHypersV', ...
-    'emb2coeffBetasT','emb2coeffBetasV','allVertHat','eucDistsVColl','eucDistsTColl')
+    'eucDistsV','eucDistsV3D','tCoeffR2','vCoeffR2','cTunT','cTunV','optHypersT','optHypersV', ...
+    'emb2coeffBetasT','emb2coeffBetasV','allVertHat','eucDistsVColl','eucDistsV3DColl','-v7.3')
+
+%%
+
+abcFs = 16;
+abcX = -.4;
+abcY = 1.1;
+
+
+load([proj0257Dir '/embeddingLayers2Faces/embeddingLayers2pcaCoeffs.mat'])
+
+fspcLblTxt = {'pixelPCA','Triplet','ClassID_{emb}','ClassMulti_{emb}','AE_{emb}','viAE10_{emb}'};
+nFspc = numel(fspcLblTxt);
+
+fMap = flipud(cbrewer('div','RdBu',256*2));
+hfMap = fMap(size(fMap,1)/2+1:end,:);
+
+pos = nf.v(relVert,:);
+cLimV = max(abs(stack(eucDistsV)));
+% cLimT = max(abs(stack(eucDistsT)));
+for fspc = 1:nFspc
+    
+    subaxis(2,nFspc,fspc,'Spacing',.02)
+        toPlot = eucDistsV(relVert,fspc);
+        scatter3(pos(:,1),pos(:,2),pos(:,3),10,toPlot,'filled')
+        axis image
+        view([0 90])
+        caxis([0 cLimV])
+        %chV = colorbar;
+        colormap(hfMap)
+        ht = title(fspcLblTxt{fspc});
+        axesoffwithlabels(ht)
+
+        if fspc == 1
+            text(abcX,abcY,'C','Units', 'Normalized','FontSize',abcFs,'FontWeight','bold')
+        end
+    
+    
+    subaxis(2,nFspc,fspc+nFspc,'Spacing',.02)
+        toPlot = rescale(eucDistsV3D(relVert,:,:));
+        toPlot = toPlot(:,:,fspc);
+        toPlot = toPlot(:,[2 3 1]);
+        scatter3(pos(:,1),pos(:,2),pos(:,3),dotSize,toPlot,'filled')
+
+        axis image
+        view([0 90])
+        caxis([0 cLimV])
+        %chV = colorbar;
+        colormap(hfMap)
+        ht = title(fspcLblTxt{fspc});
+        axesoffwithlabels(ht)
+
+        if fspc == 1
+            text(abcX,abcY,'C','Units', 'Normalized','FontSize',abcFs,'FontWeight','bold')
+        end
+    
+end
+
+for thsCollId = 1:nColl
+    for fspc = 1:nFspc
+        subaxis(nColl,nFspc,(thsCollId-1)*nFspc+fspc,'Spacing',.02)
+            toPlot = rescale(eucDistsV3DColl(relVert,:,:,fspcSel));
+            toPlot = toPlot(:,:,thsCollId,fspc);
+            toPlot = toPlot(:,[2 3 1]);
+            scatter3(thsPos(:,1),thsPos(:,2),thsPos(:,3),dotSize,toPlot,'filled')
+
+            axis image
+            view([0 90])
+            %caxis([0 cLimV])
+            %chV = colorbar;
+            colormap(hfMap)
+            ht = title(fspcLblTxt{fspc});
+            axesoffwithlabels(ht)
+
+            if fspc == 1
+                text(abcX,abcY,'C','Units', 'Normalized','FontSize',abcFs,'FontWeight','bold')
+            end
+        
+    end
+end
+
+
+% figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
+% fig = gcf;
+% fig.PaperUnits = 'centimeters';
+% fig.PaperPosition = [0 0 25 13];
+% fig.PaperSize = [25 13];
+% print(fig,'-dpdf','-r300',[figDir 'eucDist_MassMultiVariate.pdf'],'-opengl')

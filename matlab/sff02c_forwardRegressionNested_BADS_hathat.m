@@ -1,8 +1,10 @@
-% this script collects all predictors and predictees and then performs a
-% nested cross-validation to re-predict predictions of human behaviour
-% predicted from shape and texture features with DNN activations
+% this function runs the forward regression re-predicting network
+% network predictions of human behaviour from GMF shape features
 
-clearvars -except bothModels
+function forwardRegressionNested_BADS_hathat(ssSel)
+
+clearvars -except bothModels ssSel
+
 [~,hostname] = system('hostname');
 if strcmp(hostname(1:6),'tianx-')
     homeDir = '/analyse/cdhome/';
@@ -39,7 +41,8 @@ for be = 1:numel(allVAEBetas)
     euclidToOrigAll(:,:,:,:,:,be) = euclidToOrig;
 end
 % in order of files
-load([proj0257Dir '/christoph_face_render_withAUs_20190730/colleaguesRandomJiayu/pca512.mat']);
+load([proj0257Dir '/christoph_face_render_withAUs_20190730/colleaguesRandomJiayu/pca512_netTrainWAngles.mat']);
+pcaToSaveODwAng = pcaToSave;
 
 load('/analyse/Project0257/humanReverseCorrelation/activations/IDonly/trialsRandom/embeddingLayerActs.mat')
 idOnlyActs = classifierActs;
@@ -60,9 +63,20 @@ allClassifierDecs(:,:,:,:,:,3) = classifierDecs;
 load([proj0257Dir '/humanReverseCorrelation/activations/classifierOnVAE/trialsRandom/classifierOnVAEDecs_depth2.mat'])
 allClassifierDecs(:,:,:,:,:,4) = classifierDecs;
 
+load([proj0257Dir '/humanReverseCorrelation/activations/viae/trialsRandom/latentVecs.mat'])
+viAEBottleneckAll = latentVec;
+load([proj0257Dir '/humanReverseCorrelation/activations/ae/trialsRandom/latentVecs.mat'])
+aeBottleneckAll = latentVec;
+load([proj0257Dir '/humanReverseCorrelation/activations/viae10/trialsRandom/latentVecs.mat'])
+viae10BottleneckAll = latentVec;
+
 load([proj0257Dir '/embeddingLayers2Faces/embeddingLayers2pcaCoeffs.mat'], ...
     'eucDistsT','eucDistsV','tCoeffR2','vCoeffR2','cTunT','cTunV','optHypersT','optHypersV', ...
     'emb2coeffBetasT','emb2coeffBetasV')
+
+useDevPathGFG
+load default_face.mat
+relVert = unique(nf.fv(:));
 
 allIDs = [92 93 149 604];
 allCVI = [1 1 2 2; 2 2 2 2];
@@ -106,7 +120,8 @@ getR2 = @(y,yHat) 1-sum((y-yHat).^2)/sum((y-mean(y)).^2);
 
 cvStruct = struct;
 cvStruct.maxIter = 200;
-cvStruct.optObjective = 'Pearson';
+cvStruct.regType = 'lambda';
+cvStruct.optObjective = 'R2';
 cvStruct.nFolds = 9;
 cvStruct.nSplitTest = 1;
 cvStruct.nSamp = floor(nTrials/cvStruct.nFolds);
@@ -120,14 +135,19 @@ options.UncertaintyHandling = 0;
 options.Display = 'off';
 nonbcon = [];
 
-fspcLabels = {'shape','texture','triplet','netID_{9.5}','netMulti_{9.5}','\beta=1 VAE'};
-fspcSel = [3:6];
+fspcLabels = {'pixelPCA_od_WAng','triplet','netID_{9.5}','netMulti_{9.5}','\beta=1 VAE','viAE','AE','viAE10', ...
+              'pixelPCA_od_WAng','triplet','netID_{9.5}','netMulti_{9.5}','\beta=1 VAE','viAE','AE','viAE10'};
+allNFeaturesPerSpace = {[1 355],[1 355],[1 355],[1 355],[1 355],[1 355],[1 355],[1 355], ...
+                [1 13473],[1 13473],[1 13473],[1 13473],[1 13473],[1 13473]};
+fspcSel = [1:8];
 
-for ss = 13:14
+for ss = ssSel
     for gg = 1:2
         
-        disp(['loading stimulus PCA coefficients ' num2str(gg)])
+        C = reshape(bothModels{gg}.Uv,[4735 3 355]);
+        C = stack2(permute(C(relVert,:,:),[3 1 2]))';
         
+        disp(['loading stimulus PCA coefficients ' num2str(gg)])
         load([proj0257Dir 'humanReverseCorrelation/fromJiayu/IDcoeff' coeffFileNames{gg} '.mat']) % randomized PCA weights
         
         for id = 1:2
@@ -159,25 +179,16 @@ for ss = 13:14
             texAll = zeros(nCoeff,nTexCoeffDim,nTrials);
             
             verticesAll = zeros(4735,3,nTrials);
-            pixelsAll = zeros(800,600,3,nTrials);
-            
-            vertexDistsAll = zeros(nTrials,1);
-            vertexWiseDistsAll = zeros(nTrials,4735);
-            pixelDistsAll = zeros(nTrials,1);
             
             vaeAll = zeros(nVAEdim,nTrials,numel(allVAEBetas)); 
             idOnlyAll = zeros(nVAEdim,nTrials); 
             multiAll = zeros(nVAEdim,nTrials); 
             tripletAll = zeros(nTripletDim,nTrials); 
+            viAEAll = zeros(nVAEdim,nTrials);
+            aeAll = zeros(nVAEdim,nTrials);
+            viAE10All = zeros(nVAEdim,nTrials);
             
-            tripletEDAll = zeros(nTrials,1); 
-            idOnlyEDAll = zeros(nTrials,1);  
-            multiEDAll = zeros(nTrials,1); 
-            vaeEDAll = zeros(nTrials,numel(allVAEBetas)); 
-            
-            fcIDAll = zeros(nTrials,4); 
-            
-            pca512All = zeros(nVAEdim,nTrials); 
+            pixelPCA512_OD_wAng = zeros(nVAEdim,nTrials);
             
             for tt = 1:nTrials
                 if mod(tt,600)==0; disp(['collecting features in correct order ' num2str(tt) ' ' datestr(clock,'HH:MM:SS')]); end
@@ -192,16 +203,8 @@ for ss = 13:14
                 thsTCoeffPure = tcoeffpure(:,:,thsFile,thsCol,thsRow,id);
                 shaAll(:,:,tt) = thsVCoeffPure;
                 texAll(:,:,tt) = thsTCoeffPure;
-                [verticesAll(:,:,tt),pixelsAll(:,:,:,tt)] = generate_person_GLM(bothModels{gg},allCVI(:,thsCollId),allCVV(gg,id),thsVCoeffPure,thsTCoeffPure,.6,true);                
-                
-                % also get raw (non pure) shape coefficients
-                shaRawAll(:,tt) = vcoeff(:,thsFile,thsCol,thsRow,id);
-                
-                % get distances to original in terms of XYZ and RGB values
-                vertexDistsAll(tt,1) = double(mean(sum((verticesAll(:,:,tt)-shapeOrig).^2,2)));
-                vertexWiseDistsAll(tt,:) = double(sum((verticesAll(:,:,tt)-shapeOrig).^2,2));
-                pixelDistsAll(tt,1) = double(mean(stack(sum((pixelsAll(:,:,:,tt)-texOrig).^2,3))));
-                
+                [verticesAll(:,:,tt),~] = generate_person_GLM(bothModels{gg},allCVI(:,thsCollId),allCVV(gg,id),thsVCoeffPure,thsTCoeffPure,.6,true);                
+
                 % get DNN embeddings of given face in chronological order
                 idOnlyAll(:,tt) = idOnlyActs(:,thsFile,thsCol,thsRow,id,gg);
                 multiAll(:,tt) = multiActs(:,thsFile,thsCol,thsRow,id,gg);
@@ -209,25 +212,27 @@ for ss = 13:14
                 
                 for be = 1:numel(allVAEBetas)
                     vaeAll(:,tt,be) = latentVecAll(:,thsFile,thsCol,thsRow,id,gg,be);
-                    vaeEDAll(tt,be) = euclidToOrigAll(thsFile,thsCol,thsRow,id,gg,be);
                 end
                 
-                % DNN fcID output pre-softmax (so no log necessary here) in
-                % chronological order
-                fcIDAll(tt,:) = allClassifierDecs(thsFile,thsCol,thsRow,id,gg,:);
-                
-                % also get euclidean distances of classifiers and triplet
-                idOnlyEDAll(tt,1) = idOnlyED(thsFile,thsCol,thsRow,id,gg);
-                multiEDAll(tt,1) = multiED(thsFile,thsCol,thsRow,id,gg);
-                tripletEDAll(tt,1) = tripletED(thsFile,thsCol,thsRow,id,gg);
+                viAEAll(:,tt) = viAEBottleneckAll(:,thsFile,thsCol,thsRow,id,gg);
+                aeAll(:,tt) = aeBottleneckAll(:,thsFile,thsCol,thsRow,id,gg);
+                viAE10All(:,tt) = viae10BottleneckAll(:,thsFile,thsCol,thsRow,id,gg);
                 
                 % and pca features
-                pca512All(:,tt) = pcaToSave(:,thsFile,thsCol,thsRow,gg,id); % have been stored differently from DNN features
+                pixelPCA512_OD_wAng(:,tt) = pcaToSaveODwAng(:,thsFile,thsCol,thsRow,gg,id); % have been stored differently from DNN features
             end
+            
+            verticesAll = zscore(stack2(permute(verticesAll(relVert,:,:),[3 1 2])));
             
             % collect all ratings (humans and dnns) in one matrix
             humanRatings = systemsRatings(:,thsCollId,ss,1);
-            humanRatingsB = rebin(systemsRatings(:,thsCollId,ss,1),nBins);
+            if ss < 15
+                humanRatingsB = rebin(systemsRatings(:,thsCollId,ss,1),nBins);
+            else
+                % cross participant average isn't discrete, so can't use
+                % rebin here
+                humanRatingsB = eqpop_slice_omp(systemsRatings(:,thsCollId,ss,1),nBins,nThreads);
+            end
             
             for fspc = fspcSel
                     
@@ -236,32 +241,52 @@ for ss = 13:14
                 
                 % select current feature space and add column of 1s for
                 % bias
-                allNFeaturesPerSpace = {[1 355],[1 1775],[1 355],[1 355],[1 355],[1 355]};
-                
                 if fspc == 1
-                    featMat = [ones(nTrials,1) squeeze(shaAll)'];
+                    featMatN = [ones(nTrials,1) pixelPCA512_OD_wAng'];
+                    featMatC = [ones(nTrials,1) verticesAll*pinv(C)'];
                 elseif fspc == 2
-                    featMat = [ones(nTrials,1) reshape(texAll,[nCoeff*nTexCoeffDim nTrials])'];
-                elseif fspc == 3
                     featMatN = [ones(nTrials,1) squeeze(tripletAll)'];
-                    featMatC = [ones(nTrials,1) featMatN*emb2coeffBetasV{1}];
-                    featMatC = [ones(nTrials,1) squeeze(shaAll)'];
-                elseif fspc == 4
+                    featMatC = [ones(nTrials,1) verticesAll*pinv(C)'];
+                elseif fspc == 3
                     featMatN = [ones(nTrials,1) squeeze(idOnlyAll)'];
-                    featMatC = [ones(nTrials,1) featMatN*emb2coeffBetasV{2}];
-                    featMatC = [ones(nTrials,1) squeeze(shaAll)'];
-                elseif fspc == 5
+                    featMatC = [ones(nTrials,1) verticesAll*pinv(C)'];
+                elseif fspc == 4
                     featMatN = [ones(nTrials,1) squeeze(multiAll)'];
-                    featMatC = [ones(nTrials,1) featMatN*emb2coeffBetasV{3}];
-                    featMatC = [ones(nTrials,1) squeeze(shaAll)'];
-                elseif fspc == 6
+                    featMatC = [ones(nTrials,1) verticesAll*pinv(C)'];
+                elseif fspc == 5
                     featMatN = [ones(nTrials,1) squeeze(vaeAll(:,:,1))'];
-                    featMatC = [ones(nTrials,1) featMatN*emb2coeffBetasV{4}];
-                    featMatC = [ones(nTrials,1) squeeze(shaAll)'];
+                    featMatC = [ones(nTrials,1) verticesAll*pinv(C)'];
+                elseif fspc == 6
+                    featMatN = [ones(nTrials,1) squeeze(viAEAll)'];
+                    featMatC = [ones(nTrials,1) verticesAll*pinv(C)'];
+                elseif fspc == 7
+                    featMatN = [ones(nTrials,1) squeeze(aeAll)'];
+                    featMatC = [ones(nTrials,1) verticesAll*pinv(C)'];
+                elseif fspc == 8
+                    featMatN = [ones(nTrials,1) squeeze(viAE10All)'];
+                    featMatC = [ones(nTrials,1) verticesAll*pinv(C)'];
+                elseif fspc == 9
+                    featMatN = [ones(nTrials,1) squeeze(tripletAll)'];
+                    featMatC = [ones(nTrials,1) verticesAll];
+                elseif fspc == 10
+                    featMatN = [ones(nTrials,1) squeeze(idOnlyAll)'];
+                    featMatC = [ones(nTrials,1) verticesAll];
+                elseif fspc == 11
+                    featMatN = [ones(nTrials,1) squeeze(multiAll)'];
+                    featMatC = [ones(nTrials,1) verticesAll];
+                elseif fspc == 12
+                    featMatN = [ones(nTrials,1) squeeze(vaeAll(:,:,1))'];
+                    featMatC = [ones(nTrials,1) verticesAll];
+                elseif fspc == 13
+                    featMatN = [ones(nTrials,1) squeeze(viAEAll)'];
+                    featMatC = [ones(nTrials,1) verticesAll];
+                elseif fspc == 14
+                    featMatN = [ones(nTrials,1) pixelPCA512_OD_wAng'];
+                    featMatC = [ones(nTrials,1) verticesAll];
                 end
                 
                 % load model predicting ratings from network features
-                load([proj0257Dir 'humanReverseCorrelation/forwardRegression/BADS9fold/ss' ...
+                load([proj0257Dir 'humanReverseCorrelation/forwardRegression/BADS9fold/' cvStruct.optObjective '/ss' ...
                     num2str(ss) '_id' num2str(thsCollId) '_' fspcLabels{fspc} '_nested_bads_9folds.mat'],'mdlDev')
                 mdlDevN = mdlDev;
                 
@@ -297,7 +322,10 @@ for ss = 13:14
                     thsTes = cvStruct.partit(:,cvStruct.combs(foCtr,1));
                     thsDev = setxor(1:size(featMatC,1),thsTes);
                     
+                    % get predictions ("y_hat") of behaviour based on
+                    % network activations
                     yHatN = featMatN*mdlDevN(:,oFo);
+                    % also get the binned version
                     yHatNB = eqpopbin(yHatN,nBins);
                     
                     for iFo = 1:cvStruct.nFolds-1
@@ -368,8 +396,14 @@ for ss = 13:14
                     
                 end
                 
+                if fspc > 8
+                    vToggle = 'V';
+                else
+                    vToggle = [];
+                end
+                
                 save([proj0257Dir 'humanReverseCorrelation/forwardRegression/BADS9foldHatHat/ss' ...
-                    num2str(ss) '_id' num2str(thsCollId) '_' fspcLabels{fspc} '_nested_bads_9folds.mat'], ...
+                    num2str(ss) '_id' num2str(thsCollId) '_' fspcLabels{fspc} vToggle '_nested_bads_9folds.mat'], ...
                     'yHat','cvStruct','optHypers','cTun','histHyper','histCost', ...
                     'devMIB','devR2','devKT','devPC','testMIB','testR2','testKT','testPC','mdlDev')
                 
