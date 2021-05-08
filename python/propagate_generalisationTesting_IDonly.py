@@ -69,50 +69,48 @@ col0_generator = eval_datagen.flow_from_dataframe(
 
 model.evaluate_generator(generator=col0_generator,steps=1)
 
-
-basePth = proj0257Dir+'christoph_face_render_withAUs_20190730/DecoderGeneralisationAmplification/'
+nRT = 1
+rendererVersions = ['','NetRender']
+basePth = proj0257Dir+'christoph_face_render_withAUs_20190730/generalisationTesting'+rendererVersions[nRT]+'/'
 genderTxt = ['f','m']
-bhvType = ['{lincomb}']
 
 nBatch = 1
 
-for ss in range(14):
-    for gg in range(2):
-        for id in range(2):
-            for bhv in range(1):
-                
-                print('gg '+str(gg+1)+' id '+str(id+1)+' bhv '+str(bhv+1)+' ss '+str(ss+1))
-                ths_txt = basePth+genderTxt[gg]+'/id'+str(id+1)+'/ss'+str(ss+1)+'/linksToImages.txt'
-                
-                ths_df = pd.read_csv(ths_txt, delim_whitespace = True, header=None)
-                ths_df.columns = ['filename', 'yID', 'yVector', 'yGender', 'yEthn', 'yAge', 'yEmo', 'yAnglex', 'yAngley', 'yAnglelx', 'yAnglely']
-                ths_df = ths_df[['filename','yID']]
-                ths_df['yID'] = ths_df['yID'].astype(str).str.zfill(4)
-                
-                ths_generator = eval_datagen.flow_from_dataframe(
-                    dataframe=ths_df,
-                    target_size=(224,224),
-                    directory=None,
-                    x_col='filename',
-                    y_col='yID',
-                    class_mode = 'categorical',
-                    classes = classLabels,
-                    validate_filenames=False,
-                    shuffle=False,
-                    batch_size=int(ths_df.shape[0]/nBatch))
-                
-                for bb in range(nBatch):
-                    print('loading batch '+str(bb))
-                    thsBatch, thsLabels = next(ths_generator)
-                    print('evaluating model ... ')    
-                    model.evaluate(x=thsBatch, y=thsLabels)
+for gg in range(2):
+    for id in range(2):
                     
-                    thsDestinDir = proj0257Dir+'humanReverseCorrelation/decoderGeneralisation/ClassID_'+bhvType[bhv]+'/ss'+str(ss+1)+'/'+genderTxt[gg]+'/id'+str(id+1)+'/'
-                    
-                    if not os.path.exists(thsDestinDir):
-                        os.makedirs(thsDestinDir)
-                    
-                    print('extracting activations')
-                    getActID(model, thsBatch, thsDestinDir, startLayer=9, batchNr=bb)
+        print('gg '+str(gg+1)+' id '+str(id+1))
+        ths_txt = basePth+'/'+genderTxt[gg]+'/id'+str(id+1)+'/linksToImages.txt'
+        
+        ths_df = pd.read_csv(ths_txt, delim_whitespace = True, header=None)
+        ths_df.columns = ['filename', 'yID', 'yVector', 'yGender', 'yEthn', 'yAge', 'yEmo', 'yAnglex', 'yAngley', 'yAnglelx', 'yAnglely']
+        ths_df = ths_df[['filename','yID']]
+        ths_df['yID'] = ths_df['yID'].astype(str).str.zfill(4)
+        
+        ths_generator = eval_datagen.flow_from_dataframe(
+            dataframe=ths_df,
+            target_size=(224,224),
+            directory=None,
+            x_col='filename',
+            y_col='yID',
+            class_mode = 'categorical',
+            classes = classLabels,
+            validate_filenames=False,
+            shuffle=False,
+            batch_size=int(ths_df.shape[0]/nBatch))
+        
+        for bb in range(nBatch):
+            print('loading batch '+str(bb))
+            thsBatch, thsLabels = next(ths_generator)
+            print('evaluating model ... ')    
+            model.evaluate(x=thsBatch, y=thsLabels)
+            
+            thsDestinDir = proj0257Dir+'humanReverseCorrelation/generalisationTestingN'+rendererVersions[nRT]+'/ClassID/'+genderTxt[gg]+'/id'+str(id+1)+'/'
+            
+            if not os.path.exists(thsDestinDir):
+                os.makedirs(thsDestinDir)
+            
+            print('extracting activations')
+            getActID(model, thsBatch, thsDestinDir, startLayer=9, batchNr=bb)
 
 
