@@ -20,7 +20,7 @@ import h5py
 
 sys.path.append(os.path.abspath(homeDir+'dlfaceScripts/SchynsLabDNN/faceNets/'))
 from resNetUtils import getActVAE
-from vae_models import ResNet10Encoder, ResNet10Decoder, Darknet19Encoder, Darknet19Decoder
+from vae_models import ResNet10DetEncoder, ResNet10Decoder, Darknet19Encoder, Darknet19Decoder
 from vae import AutoEncoder
 
 

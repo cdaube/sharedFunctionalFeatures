@@ -20,7 +20,7 @@ import h5py
 import keras
 
 sys.path.append(os.path.abspath(homeDir+'dlfaceScripts/SchynsLabDNN/faceNets/'))
-from vae_models import ResNet10Encoder, ResNet10Decoder, Darknet19Encoder, Darknet19Decoder, classifierOnVAE
+from vae_models import ResNet10Encoder, Darknet19Encoder, Darknet19Decoder, classifierOnVAE
 
 # create generator from validation data
 eval_datagen = ImageDataGenerator(rescale=1./255)

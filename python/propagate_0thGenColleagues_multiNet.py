@@ -82,6 +82,7 @@ spec_generator = spec_datagen.flow_from_dataframe(
     x_col='filename',
     class_mode='input',
     validate_filenames=False,
+    shuffle=False,
     batch_size=testBatchSize)
 
 thsBatch, thsDiscard = next(spec_generator)

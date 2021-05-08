@@ -39,7 +39,7 @@ def test(beta=1, cudaDev=0, batchSize=8, latentSize=512, epochs=500):
     from keras.callbacks import ModelCheckpoint, TensorBoard, ProgbarLogger
 
     sys.path.append(os.path.abspath(homeDir+'dlfaceScripts/'))
-    from vae_models import ResNet10Encoder, ResNet10Decoder, Darknet19Encoder, Darknet19Decoder
+    from vae_models import ResNet10Encoder, Darknet19Encoder, Darknet19Decoder
     from resNetUtils import loadTrainData0th1st
 
     # load data

@@ -6,14 +6,14 @@ THE UNLICENSE
 '''
 import tensorflow as tf
 from keras.layers import (Input, InputLayer, Conv2D, Conv2DTranspose,
-            BatchNormalization, LeakyReLU, MaxPool2D, UpSampling2D,
+            BatchNormalization, LeakyReLU, MaxPool2D, UpSampling2D, Flatten,
             Reshape, GlobalAveragePooling2D, AveragePooling2D, ZeroPadding2D, ReLU, Dense)
 from keras.models import Model
 
-from model_utils import ConvBnLRelu, ConvBnRelu, convBasicBlock
+from model_utils import ConvBnLRelu, ConvBnRelu, convBasicBlock, basicblock, convBottleneck, bottleneck
 from sample_layer import SampleLayer
 import keras
-from vae import AutoEncoder
+import numpy as np
 
 class Architecture(object):
     '''
@@ -42,14 +42,42 @@ class Architecture(object):
     def Build(self):
         raise NotImplementedError('architecture must implement Build function')
 
+class ResNet10DetEncoder(Architecture):
+    '''
+    deterministic encoder
+    Encoder adapted from Tian Xu by Christoph Daube
+    '''
+    def __init__(self, inputShape=(224, 224, 3), batchSize=None,
+                 latentSize=512, training=None):
+
+        self.training = training
+        super().__init__(inputShape, batchSize, latentSize)
+
+    def Build(self):
+        imgInput = Input(self.inputShape, self.batchSize)
+
+        x = ZeroPadding2D(3)(imgInput)
+
+        x = Conv2D(64, 7, strides=(2, 2), name='conv1')(x)
+        x = BatchNormalization(name='bn_conv1')(x)
+        x = ReLU()(x)
+        x = MaxPool2D(3, strides=(2, 2))(x)
+
+        x = convBasicBlock(64, 3, stage=2, block='a', strides=(1, 1))(x)
+        x = convBasicBlock(128, 3, stage=3, block='a')(x)
+        x = convBasicBlock(256, 3, stage=4, block='a')(x)
+        x = convBasicBlock(512, 3, stage=5, block='a')(x)
+
+        x = AveragePooling2D((7, 7), name='avg_pool')(x)
+        x = Flatten()(x)
+
+        return Model(inputs=imgInput, outputs=x)
+        
 
 class ResNet10Encoder(Architecture):
     '''
     This encoder predicts distributions then randomly samples them.
-    Regularization may be applied to the latent space output
-    a simple, fully convolutional architecture inspried by 
-        pjreddie's darknet architecture
-    https://github.com/pjreddie/darknet/blob/master/cfg/darknet19.cfg
+    Encoder adapted from Tian Xu by Christoph Daube
     '''
     def __init__(self, inputShape=(224, 224, 3), batchSize=None,
                  latentSize=512, latentConstraints='bvae', beta=100, training=None):
@@ -66,7 +94,7 @@ class ResNet10Encoder(Architecture):
         '''
         self.latentConstraints = latentConstraints
         self.beta = beta
-        self.training=training
+        self.training = training
         super().__init__(inputShape, batchSize, latentSize)
 
     def Build(self):
@@ -93,6 +121,188 @@ class ResNet10Encoder(Architecture):
 
         return Model(inputs=imgInput, outputs=sample)
         
+
+class ResNet34DetEncoder(Architecture):
+    '''
+    This encoder predicts distributions then randomly samples them.
+    Encoder adapted from Tian Xu by Christoph Daube
+    '''
+    def __init__(self, inputShape=(224, 224, 3), batchSize=None,
+                 latentSize=512, training=None):
+        '''
+        params
+        -------
+        latentConstraints : str
+            Either 'bvae', 'vae', or 'no'
+            Determines whether regularization is applied
+                to the latent space representation.
+        beta : float
+            beta > 1, used for 'bvae' latent_regularizer
+            (Unused if 'bvae' not selected, default 100)
+        '''
+        self.training = training
+        super().__init__(inputShape, batchSize, latentSize)
+
+    def Build(self):
+        imgInput = Input(self.inputShape, self.batchSize)
+
+        x = ZeroPadding2D(3)(imgInput)
+
+        x = Conv2D(64, 7, strides=(2, 2), name='conv1')(x)
+        x = BatchNormalization(name='bn_conv1')(x)
+        x = ReLU()(x)
+        x = MaxPool2D(3, strides=(2, 2))(x)
+
+        x = convBasicBlock(64, 3, stage=2, block='a', strides=(1, 1))(x)
+        x = basicblock(64, 3, stage=2, block='b')(x)
+        x = basicblock(64, 3, stage=2, block='c')(x)
+
+        x = convBasicBlock(128, 3, stage=3, block='a')(x)
+        x = basicblock(128, 3, stage=3, block='b')(x)
+        x = basicblock(128, 3, stage=3, block='c')(x)
+        x = basicblock(128, 3, stage=3, block='d')(x)
+
+        x = convBasicBlock(256, 3, stage=4, block='a')(x)
+        x = basicblock(256, 3, stage=4, block='b')(x)
+        x = basicblock(256, 3, stage=4, block='c')(x)
+        x = basicblock(256, 3, stage=4, block='d')(x)
+        x = basicblock(256, 3, stage=4, block='e')(x)
+        x = basicblock(256, 3, stage=4, block='f')(x)
+
+        x = convBasicBlock(512, 3, stage=5, block='a')(x)
+        x = basicblock(512, 3, stage=5, block='b')(x)
+        x = basicblock(512, 3, stage=5, block='c')(x)
+
+        x = AveragePooling2D((7, 7), name='avg_pool')(x)
+        x = Flatten()(x)
+
+        return Model(inputs=imgInput, outputs=x)
+
+
+class ResNet34Encoder(Architecture):
+    '''
+    This encoder predicts distributions then randomly samples them.
+    Encoder adapted from Tian Xu by Christoph Daube
+    '''
+    def __init__(self, inputShape=(224, 224, 3), batchSize=None,
+                 latentSize=512, latentConstraints='bvae', beta=100, training=None):
+        '''
+        params
+        -------
+        latentConstraints : str
+            Either 'bvae', 'vae', or 'no'
+            Determines whether regularization is applied
+                to the latent space representation.
+        beta : float
+            beta > 1, used for 'bvae' latent_regularizer
+            (Unused if 'bvae' not selected, default 100)
+        '''
+        self.latentConstraints = latentConstraints
+        self.beta = beta
+        self.training = training
+        super().__init__(inputShape, batchSize, latentSize)
+
+    def Build(self):
+        imgInput = Input(self.inputShape, self.batchSize)
+
+        x = ZeroPadding2D(3)(imgInput)
+
+        x = Conv2D(64, 7, strides=(2, 2), name='conv1')(x)
+        x = BatchNormalization(name='bn_conv1')(x)
+        x = ReLU()(x)
+        x = MaxPool2D(3, strides=(2, 2))(x)
+
+        x = convBasicBlock(64, 3, stage=2, block='a', strides=(1, 1))(x)
+        x = basicblock(64, 3, stage=2, block='b')(x)
+        x = basicblock(64, 3, stage=2, block='c')(x)
+
+        x = convBasicBlock(128, 3, stage=3, block='a')(x)
+        x = basicblock(128, 3, stage=3, block='b')(x)
+        x = basicblock(128, 3, stage=3, block='c')(x)
+        x = basicblock(128, 3, stage=3, block='d')(x)
+
+        x = convBasicBlock(256, 3, stage=4, block='a')(x)
+        x = basicblock(256, 3, stage=4, block='b')(x)
+        x = basicblock(256, 3, stage=4, block='c')(x)
+        x = basicblock(256, 3, stage=4, block='d')(x)
+        x = basicblock(256, 3, stage=4, block='e')(x)
+        x = basicblock(256, 3, stage=4, block='f')(x)
+
+        x = convBasicBlock(512, 3, stage=5, block='a')(x)
+        x = basicblock(512, 3, stage=5, block='b')(x)
+        x = basicblock(512, 3, stage=5, block='c')(x)
+
+        # variational encoder output (distributions)
+        mean = Conv2D(filters=self.latentSize, kernel_size=(1, 1),padding='same')(x)
+        mean = GlobalAveragePooling2D()(mean)
+        logvar = Conv2D(filters=self.latentSize, kernel_size=(1, 1),padding='same')(x)
+        logvar = GlobalAveragePooling2D()(logvar)
+        sample = SampleLayer(self.latentConstraints, self.beta)([mean, logvar], training=self.training)
+
+        return Model(inputs=imgInput, outputs=sample)
+
+
+class ResNet50Encoder(Architecture):
+    '''
+    This encoder predicts distributions then randomly samples them.
+    Encoder adapted from Tian Xu by Christoph Daube
+    '''
+    def __init__(self, inputShape=(224, 224, 3), batchSize=None,
+                 latentSize=512, latentConstraints='bvae', beta=100, training=None):
+        '''
+        params
+        -------
+        latentConstraints : str
+            Either 'bvae', 'vae', or 'no'
+            Determines whether regularization is applied
+                to the latent space representation.
+        beta : float
+            beta > 1, used for 'bvae' latent_regularizer
+            (Unused if 'bvae' not selected, default 100)
+        '''
+        self.latentConstraints = latentConstraints
+        self.beta = beta
+        self.training = training
+        super().__init__(inputShape, batchSize, latentSize)
+
+    def Build(self):
+        imgInput = Input(self.inputShape, self.batchSize)
+
+        x = ZeroPadding2D(3)(imgInput)
+
+        x = Conv2D(64, 7, strides=(2, 2), name='conv1')(x)
+        x = BatchNormalization(name='bn_conv1')(x)
+        x = ReLU()(x)
+        x = MaxPool2D(3, strides=(2, 2))(x)
+
+        x = convBottleneck(64, 3, stage=2, block='a', strides=(1, 1))(x)
+        x = bottleneck(64, 3, stage=2, block='b')(x)
+        x = bottleneck(64, 3, stage=2, block='c')(x)
+
+        x = convBottleneck(128, 3, stage=3, block='a')(x)
+        x = bottleneck(128, 3, stage=3, block='b')(x)
+        x = bottleneck(128, 3, stage=3, block='c')(x)
+        x = bottleneck(128, 3, stage=3, block='d')(x)
+
+        x = convBottleneck(256, 3, stage=4, block='a')(x)
+        x = bottleneck(256, 3, stage=4, block='b')(x)
+        x = bottleneck(256, 3, stage=4, block='c')(x)
+        x = bottleneck(256, 3, stage=4, block='d')(x)
+        x = bottleneck(256, 3, stage=4, block='e')(x)
+        x = bottleneck(256, 3, stage=4, block='f')(x)
+
+        x = convBottleneck(512, 3, stage=5, block='a')(x)
+        x = bottleneck(512, 3, stage=5, block='b')(x)
+        x = bottleneck(512, 3, stage=5, block='c')(x)
+
+        # variational encoder output (distributions)
+        mean = Conv2D(filters=self.latentSize, kernel_size=(1, 1),padding='same')(x)
+        mean = GlobalAveragePooling2D()(mean)
+        logvar = Conv2D(filters=self.latentSize, kernel_size=(1, 1),padding='same')(x)
+        logvar = GlobalAveragePooling2D()(logvar)
+        sample = SampleLayer(self.latentConstraints, self.beta)([mean, logvar], training=self.training)
+
+        return Model(inputs=imgInput, outputs=sample)
 
 class Darknet19Encoder(Architecture):
     '''
@@ -217,6 +427,24 @@ class Darknet19Decoder(Architecture):
         return Model(inLayer, net)
 
 
+class AutoEncoder(object):
+    def __init__(self, encoderArchitecture, 
+                 decoderArchitecture):
+
+        self.encoder = encoderArchitecture.model
+        self.decoder = decoderArchitecture.model
+
+        self.ae = Model(self.encoder.inputs, self.decoder(self.encoder.outputs))
+
+
+
+def joinGens(gen1, gen2):
+    while True:
+        x = gen1.next()
+        y = gen2.next()
+        yield x, y
+
+
 # build and compile the autoencoder
 def classifierOnVAE(depth,classes,fcActFunc='softmax',latentSize=512, inputShape=(224, 224, 3),beta=1,projDir='/analyse/Project0257/'):
 
@@ -261,7 +489,7 @@ def classifierOnVAE(depth,classes,fcActFunc='softmax',latentSize=512, inputShape
 def test():
     r10e = ResNet10Encoder()
     r10e.model.summary()
-    r10d = ResNet10Decoder()
+    r10d = Darknet19Decoder()
     r10d.model.summary()
 
 if __name__ == '__main__':

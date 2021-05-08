@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 import scipy.io
 import matplotlib.pyplot as plt
-from tripletlossModel import learn, text_to_df, createDataGenBeta
+from tripletlossModel import learn, createDataGenBeta, txt_to_df
 
 '''
 txtPth = projDir+'tripletTxtLists/randAlloc/'
@@ -25,24 +25,22 @@ ths_anchor_df, ths_positive_df, ths_negative_df = txt_to_df(txtPth,'val')
 thsGenerator = createDataGenBeta(ths_anchor_df, ths_positive_df, ths_negative_df, 10)
 thsAnchors, thsPositives, thsNegatives, dummY = next(thsGenerator)
 # sanity check of synchronous shuffling via seed
-fig, axs = plt.subplots(2, 3)
-axs[0, 0].imshow(thsAnchors[0,:,:,:])
-axs[0, 1].imshow(thsPositives[0,:,:,:])
-axs[0, 2].imshow(thsNegatives[0,:,:,:])
-axs[1, 0].imshow(thsAnchors[1,:,:,:])
-axs[1, 1].imshow(thsPositives[1,:,:,:])
-axs[1, 2].imshow(thsNegatives[1,:,:,:])
-plt.setp(plt.gcf().get_axes(), xticks=[], yticks=[])
-plt.show()
+nRow = 10
+nCol = 3
+fig, axs = plt.subplots(nRow, nCol, figsize=(40,70))
+for rr in range(nRow):
+    for cc in range(nCol):
+        axs[rr, 0].imshow(thsAnchors[rr,:,:,:])
+        axs[rr, 1].imshow(thsPositives[rr,:,:,:])
+        axs[rr, 2].imshow(thsNegatives[rr,:,:,:])
 
-fig.set_size_inches(20, 30)
+plt.setp(plt.gcf().get_axes(), xticks=[], yticks=[])
 fig.savefig('/home/chrisd/ownCloud/FiguresDlFace/tripletLossGeneratorTest.png')
 '''
 
 txtPth = projDir+'tripletTxtLists/randAlloc/'
-saveFilePth = projDir+'/tripletLossModels/randAlloc/prerefine/test1'
-outPth = saveFilePth
-embSize = 64
+outPth = projDir+'/tripletLossModels/randAlloc/prerefine/test2'
+embSize = 512
 batch = 100
 nBatchPerChunk = 10
 nTrainChunks = 20
@@ -63,8 +61,7 @@ learn(txtPth=txtPth,
 
 # create list of inputs
 txtPth = projDir+'tripletTxtLists/randAlloc/'
-saveFilePth = projDir+'/tripletLossModels/randAlloc/refined/test1'
-outPth = saveFilePth
+outPth = projDir+'/tripletLossModels/randAlloc/refined/test2'
 initialLr = .00001
 
 # trigger triplet loss training

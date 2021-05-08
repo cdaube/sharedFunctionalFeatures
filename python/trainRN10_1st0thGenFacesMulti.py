@@ -1,5 +1,5 @@
 import sys, os, socket
-os.environ["CUDA_VISIBLE_DEVICES"]="1"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 # set directories depending on machine
 hostname = socket.gethostname()
 
@@ -152,7 +152,7 @@ colleague_generator = genWrapperMult(eval_datagen.flow_from_dataframe(
 
 model.evaluate_generator(generator=train_generator,steps=1)
 model.evaluate_generator(generator=validation_generator,steps=1)
-model.evaluate_generator(generator=test_generator,steps=1)
+model.evaluate_generator(generator=test_generator,steps=10)
 model.evaluate_generator(generator=colleague_generator,steps=1)
 
 # function to extract activations and save them

@@ -30,16 +30,16 @@ model = loadPropagateModel(modelPath,epoch)
 
 basePth = proj0257Dir+'christoph_face_render_withAUs_20190730/amplificationTuningNetworks/wPanel/'
 genderTxt = ['f','m']
-bhvType = ['ed','cd','ind']
+bhvType = ['{euc}','{cos}','{lincomb}','{eucFit}']
 rsType = ['across']
 
 nBatch = 1
 
-for ss in range(14):
+for ss in range(15):
     for gg in range(2):
         for id in range(2):
             for rs in range(1):
-                for bhv in range(3):
+                for bhv in range(4):
                     
                     print('gg '+str(gg+1)+' id '+str(id+1)+' rs '+str(rs+1)+' bhv '+str(bhv+1)+' ss '+str(ss+1))
                     ths_txt = basePth+'ss'+str(ss+1)+'/'+genderTxt[gg]+'/id'+str(id+1)+'/triplet_'+bhvType[bhv]+'_'+rsType[rs]+'/linksToImages.txt'

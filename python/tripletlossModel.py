@@ -80,8 +80,7 @@ def createDataGenBeta(anchor_df, positive_df, negative_df, chunksize):
     anchor_generator = train_datagen.flow_from_dataframe(
         dataframe=anchor_df,
         target_size=(224,224),
-        shuffle=True,
-        seed=T_G_SEED,
+        shuffle=False,
         directory='/',
         x_col='filename',
         y_col=None,
@@ -91,8 +90,7 @@ def createDataGenBeta(anchor_df, positive_df, negative_df, chunksize):
     positive_generator = train_datagen.flow_from_dataframe(
         dataframe=positive_df,
         target_size=(224,224),
-        shuffle=True,
-        seed=T_G_SEED,
+        shuffle=False,
         directory='/',
         x_col='filename',
         y_col=None,
@@ -102,8 +100,7 @@ def createDataGenBeta(anchor_df, positive_df, negative_df, chunksize):
     negative_generator = train_datagen.flow_from_dataframe(
         dataframe=negative_df,
         target_size=(224,224),
-        shuffle=True,
-        seed=T_G_SEED,
+        shuffle=False,
         directory='/',
         x_col='filename',
         y_col=None,

@@ -75,3 +75,110 @@ class convBasicBlock(object):
         x = Add()([x, shortcut])
         x = ReLU()(x)
         return x    
+
+
+class basicblock(object):
+    '''Has no conv layer at shortcut
+    
+    # Arguments
+        input_tensor: input tensor
+        kernel_size: defualt 3, the kernel size of middle conv layer at main path
+        filters: list of integers, the nb_filters of 3 conv layer at main path
+        stage: integer, current stage label, used for generating layer names
+        block: 'a','b'..., current block label, used for generating layer names
+    '''
+    
+    def __init__(self, filters, kernelSize, stage, block, strides=(1, 1), bnMode=0, bnAxis=3):
+        self.filters = filters
+        self.kernelSize = kernelSize
+        self.strides = strides
+        self.stage = stage
+        self.block = block
+        self.bnMode = bnMode
+        self.bnAxis = bnAxis
+
+    def __call__(self, inputTensor):
+
+        convNameBase = 'res' + str(self.stage) + self.block + '_branch'
+        bnNameBase = 'bn' + str(self.stage) + self.block + '_branch'
+
+        x = Conv2D(self.filters, self.kernelSize, padding='same', strides=self.strides, name=convNameBase + '2a')(inputTensor)
+        x = BatchNormalization(axis=self.bnAxis, name=bnNameBase + '2a')(x)
+        x = ReLU()(x)
+
+        x = Conv2D(self.filters, self.kernelSize, padding='same', name=convNameBase + '2b')(x)
+        x = BatchNormalization(axis=self.bnAxis, name=bnNameBase + '2b')(x)
+
+        x = Add()([x, inputTensor])
+        x = ReLU()(x)
+        return x
+
+class convBottleneck(object):
+    '''
+    like basicblock, but with 1 more conv/bn/relu
+    '''
+    def __init__(self, filters, kernelSize, stage, block, strides=(2, 2), bnMode=0, bnAxis=3):
+        self.filters = filters
+        self.kernelSize = kernelSize
+        self.strides = strides
+        self.stage = stage
+        self.block = block
+        self.bnMode = bnMode
+        self.bnAxis = bnAxis
+
+    def __call__(self, inputTensor):
+        
+        convNameBase = 'res' + str(self.stage) + self.block + '_branch'
+        bnNameBase = 'bn' + str(self.stage) + self.block + '_branch'
+        
+        x = Conv2D(self.filters, self.kernelSize, padding='same', strides=self.strides, name=convNameBase + '2a')(inputTensor)
+        x = BatchNormalization(axis=self.bnAxis, name=bnNameBase + '2a')(x)
+        x = ReLU()(x)
+        
+        x = Conv2D(self.filters, self.kernelSize, padding='same', name=convNameBase + '2b')(x)
+        x = BatchNormalization(axis=self.bnAxis, name=bnNameBase + '2b')(x)
+        x = ReLU()(x)
+        
+        x = Conv2D(self.filters, 1, name=convNameBase + '2c')(x)
+        x = BatchNormalization(axis=self.bnAxis, name=bnNameBase + '2c')(x)
+        
+        shortcut = Conv2D(self.filters, (1, 1), strides=self.strides,name=convNameBase + '1')(inputTensor)
+        shortcut = BatchNormalization(axis=self.bnAxis, name=bnNameBase + '1')(shortcut)
+        
+        x = Add()([x, shortcut])
+        x = ReLU()(x)
+        return x
+
+
+class bottleneck(object):
+    '''
+    like basicblock, but with 1 more conv/bn/relu
+    '''
+    def __init__(self, filters, kernelSize, stage, block, strides=(1, 1), bnMode=0, bnAxis=3):
+        self.filters = filters
+        self.kernelSize = kernelSize
+        self.strides = strides
+        self.stage = stage
+        self.block = block
+        self.bnMode = bnMode
+        self.bnAxis = bnAxis
+
+    def __call__(self, inputTensor):
+
+        convNameBase = 'res' + str(self.stage) + self.block + '_branch'
+        bnNameBase = 'bn' + str(self.stage) + self.block + '_branch'
+
+        x = Conv2D(self.filters, self.kernelSize, padding='same', strides=self.strides, name=convNameBase + '2a')(inputTensor)
+        x = BatchNormalization(axis=self.bnAxis, name=bnNameBase + '2a')(x)
+        x = ReLU()(x)
+
+        x = Conv2D(self.filters, self.kernelSize, padding='same', name=convNameBase + '2b')(x)
+        x = BatchNormalization(axis=self.bnAxis, name=bnNameBase + '2b')(x)
+        x = ReLU()(x)
+
+        x = Conv2D(self.filters, 1, name=convNameBase + '2c')(x)
+        x = BatchNormalization(axis=self.bnAxis, name=bnNameBase + '2c')(x)
+
+        x = Add()([x, inputTensor])
+        x = ReLU()(x)
+        return x

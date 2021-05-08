@@ -1,5 +1,5 @@
 import sys, os, socket
-os.environ["CUDA_VISIBLE_DEVICES"]="2"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 # set directories depending on machine
 hostname = socket.gethostname()
 
@@ -27,23 +27,19 @@ from tripletlossModel import loadPropagateModel, loadPropagateBaseModel
 # create generator from validation data
 eval_datagen = ImageDataGenerator(rescale=1./255)
 
-# load model
-modelPath = '/analyse/Project0257/tripletLossModels/randAlloc/refined/test1'
-epoch = 1
-#model = loadPropagateModel(modelPath,epoch)
-model = loadPropagateBaseModel(modelPath,epoch)
+basePth = proj0257Dir+'/christoph_face_render_withAUs_20190730/colleagueFaces355Models/'
+colleaguePrefixes = ['501_2F_1WC_02','503_2F_1WC_02','502_1M_1WC_02','504_1M_1WC_02']
+colleagueFileExtensions = []
+for cc in range(4):
+    for ax in range(3):
+        for ay in range(3):
+            for alx in range(3):
+                for aly in range(3):
+                    colleagueFileExtensions.append(colleaguePrefixes[cc]+'_7Neutral_anglex'+str(ax+1)+ \
+                    '_angley'+str(ay+1)+'_anglelx'+str(alx+1)+'_anglely'+str(aly+1)+'.png')
 
-# propagate 4 colleagues under ideal conditions, order corresponds to gg1 id1 gg1 id2 gg2 id1 gg2 id2
-basePth = '/analyse/Project0257/christoph_face_render_withAUs_20190730/colleagueFaces355Models/'
-colleagueFileExtensions = ['501_2F_1WC_02_7Neutral_anglex2_angley2_anglelx2_anglely2.png',
-                        '503_2F_1WC_02_7Neutral_anglex2_angley2_anglelx2_anglely2.png', 
-                        '502_1M_1WC_02_7Neutral_anglex2_angley2_anglelx2_anglely2.png',
-                        '504_1M_1WC_02_7Neutral_anglex2_angley2_anglelx2_anglely2.png']
-spec_df = pd.DataFrame({'filename':[basePth+colleagueFileExtensions[0], 
-    basePth+colleagueFileExtensions[1], 
-    basePth+colleagueFileExtensions[2], 
-    basePth+colleagueFileExtensions[3]]})
-testBatchSize = 4
+spec_df = pd.DataFrame(columns={'filename'}, data=[(basePth+row).split() for row in colleagueFileExtensions])
+
 spec_datagen = ImageDataGenerator(rescale=1./255)
 spec_generator = spec_datagen.flow_from_dataframe(
     dataframe=spec_df,
@@ -52,20 +48,59 @@ spec_generator = spec_datagen.flow_from_dataframe(
     x_col='filename',
     class_mode='input',
     validate_filenames=False,
-    batch_size=testBatchSize)
+    shuffle=False,
+    batch_size=len(spec_df))
 
 thsBatch, thsDiscard = next(spec_generator)
-thsActivations = model.predict(thsBatch)
-# get 4 colleagues
+modelPath = '/analyse/Project0257/tripletLossModels/randAlloc/refined/test1'
+epoch = 1
 thsDestinDir = proj0257Dir+'/results/colleaguesOrigTriplet_'
+# propagate multiple angle colleagues through randomly initialised network
+model = loadPropagateBaseModel(modelPath,epoch, trained=False)
+thsActivations = model.predict(thsBatch)
+print('saving activations')
+thsFileName = thsDestinDir+'act_emb_allAnglesUntrained.h5'
+hf = h5py.File((thsFileName), 'w')
+hf.create_dataset('activations', data=thsActivations)
+hf.close()
 
-'''
+# propagate multiple angle colleagues through trained network
+model = loadPropagateBaseModel(modelPath,epoch)
+thsActivations = model.predict(thsBatch)
+print('saving activations')
+thsFileName = thsDestinDir+'act_emb_allAngles.h5'
+hf = h5py.File((thsFileName), 'w')
+hf.create_dataset('activations', data=thsActivations)
+hf.close()
+
+
+# propagate 4 colleagues under ideal conditions through trained network
+# order corresponds to gg1 id1 gg1 id2 gg2 id1 gg2 id2
+basePth = '/analyse/Project0257/christoph_face_render_withAUs_20190730/colleagueFaces355Models/'
+colleagueFileExtensions = ['501_2F_1WC_02_7Neutral_anglex2_angley2_anglelx2_anglely2.png',
+                        '503_2F_1WC_02_7Neutral_anglex2_angley2_anglelx2_anglely2.png', 
+                        '502_1M_1WC_02_7Neutral_anglex2_angley2_anglelx2_anglely2.png',
+                        '504_1M_1WC_02_7Neutral_anglex2_angley2_anglelx2_anglely2.png']
+spec_generator = spec_datagen.flow_from_dataframe(
+    dataframe=spec_df,
+    target_size=(224,224),
+    directory='/',
+    x_col='filename',
+    class_mode='input',
+    validate_filenames=False,
+    shuffle=False,
+    batch_size=len(spec_df))
+spec_df = pd.DataFrame({'filename':[basePth+colleagueFileExtensions[0], 
+    basePth+colleagueFileExtensions[1], 
+    basePth+colleagueFileExtensions[2], 
+    basePth+colleagueFileExtensions[3]]})
+model = loadPropagateBaseModel(modelPath,epoch)
+thsActivations = model.predict(thsBatch)
 print('saving activations')
 thsFileName = thsDestinDir+'act_emb.h5'
 hf = h5py.File((thsFileName), 'w')
 hf.create_dataset('activations', data=thsActivations)
 hf.close()
-'''
 
 # do random trials
 # define source path

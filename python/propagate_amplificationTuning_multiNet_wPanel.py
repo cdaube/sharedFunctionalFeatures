@@ -67,19 +67,19 @@ model.evaluate_generator(generator=col0_generator,steps=1)
 
 basePth = proj0257Dir+'christoph_face_render_withAUs_20190730/amplificationTuningNetworks/wPanel/'
 genderTxt = ['f','m']
-bhvType = ['dn','ed','cd','ind']
+bhvType = ['{dn}','{euc}','{cos}','{lincomb}','{eucFit}']
 rsType = ['across']
 
 nBatch = 1
 
-for ss in range(14):
+for ss in range(15):
     for gg in range(2):
         for id in range(2):
             for rs in range(1):
-                for bhv in range(4):
+                for bhv in range(5):
                     
                     print('gg '+str(gg+1)+' id '+str(id+1)+' rs '+str(rs+1)+' bhv '+str(bhv+1)+' ss '+str(ss+1))
-                    ths_txt = basePth+'ss'+str(ss+1)+'/'+genderTxt[gg]+'/id'+str(id+1)+'/multiNet_'+bhvType[bhv]+'_'+rsType[rs]+'/linksToImages.txt'
+                    ths_txt = basePth+'ss'+str(ss+1)+'/'+genderTxt[gg]+'/id'+str(id+1)+'/ClassMulti_'+bhvType[bhv]+'_'+rsType[rs]+'/linksToImages.txt'
                     
                     ths_df = pd.read_csv(ths_txt, delim_whitespace = True, header=None)
                     ths_df.columns = ['filename', 'yID', 'yVector', 'yGender', 'yEthn', 'yAge', 'yEmo', 'yAnglex', 'yAngley', 'yAnglelx', 'yAnglely']
@@ -101,7 +101,7 @@ for ss in range(14):
                         print('evaluating model ... ')    
                         model.evaluate(x=thsBatch, y=thsLabels)
                         
-                        thsDestinDir = proj0257Dir+'humanReverseCorrelation/amplificationTuning/wPanel/multiTask_'+bhvType[bhv]+'_'+rsType[rs]+'/ss'+str(ss+1)+'/'+genderTxt[gg]+'/id'+str(id+1)+'/'
+                        thsDestinDir = proj0257Dir+'humanReverseCorrelation/amplificationTuning/wPanel/ClassMulti_'+bhvType[bhv]+'_'+rsType[rs]+'/ss'+str(ss+1)+'/'+genderTxt[gg]+'/id'+str(id+1)+'/'
                         
                         if not os.path.exists(thsDestinDir):
                             os.makedirs(thsDestinDir)
