@@ -7,3 +7,7 @@ https://github.com/alecGraves/BVAE-tf
 ## code for triplet loss network was adapted from:
 https://github.com/noelcodella/tripletloss-keras-tensorflow
 (MIT license)
+
+## data shared
+stimuli (image files and GMF parameters) as well as responses 
+https://osf.io/7yx28/
