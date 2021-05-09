@@ -512,7 +512,7 @@ subaxis(9,nFspc+1,1,'Spacing',0, 'PaddingBottom',.01);
 % B
 abcFs = 20;
 abcX = -.15;
-abcY = 1.05;
+abcY = 1.357;
 
 subaxis(10,5,[3 4 8 9],'PaddingBottom',.05)
     colorcubes(3,.5)
@@ -605,13 +605,13 @@ subaxis(9,nFspc+1,[22 23 24 29 30 31],'Spacing',0.09);
 cla
 set(gca,'Visible','off')
 
-text(.1,1,['$1. ','\mathop{}_{\scriptstyle{B_{S}}}^{\rm{argmin}}||','y - S B_{S}','||^2_2','+||\lambda B_{S}||^2_2','$'],'Interpreter','latex','Interpreter','Latex','FontSize',18,'Units', 'Normalized')
+text(.1,1,['$1. ','\hat{y}_S = S B_{S}','$'],'Interpreter','latex','Interpreter','Latex','FontSize',18,'Units', 'Normalized')
 text(.15,.8,['$   ','\mathop{}_{\scriptstyle{B_{S}}}^{\rm{argmin}}||','y - ','\hat{y}_S','||^2_2','+||\lambda B_{S}||^2_2','$'],'Interpreter','latex','FontSize',18,'Units', 'Normalized')
 
-text(.1,.6,['$2. ','\mathop{}_{\scriptstyle{B_{N}}}^{\rm{argmin}}||','y - N B_{N}','||^2_2','+||\lambda B_{N}||^2_2','$'],'Interpreter','latex','FontSize',18,'Units', 'Normalized')
+text(.1,.6,['$2. ','\hat{y}_N = N B_{N}','$'],'Interpreter','latex','Interpreter','Latex','FontSize',18,'Units', 'Normalized')
 text(.15,.4,['$   ','\mathop{}_{\scriptstyle{B_{N}}}^{\rm{argmin}}||','y - ','\hat{y}_N','||^2_2','+||\lambda B_{N}||^2_2','$'],'Interpreter','latex','FontSize',18,'Units', 'Normalized')
 
-text(.1,.2,['$3. ','\mathop{}_{\scriptstyle{B_{S_N}}}^{\rm{argmin}}||','\hat{y}_N',' - S B_{S_N}','||^2_2','+||\lambda B_{S_N}||^2_2','$'],'Interpreter','latex','FontSize',18,'Units', 'Normalized')
+text(.1,.2,['$3. ','\hat{\hat{y}}_{S_N} = S B_{S_N}','$'],'Interpreter','latex','Interpreter','Latex','FontSize',18,'Units', 'Normalized')
 text(.15,.0,['$   ','\mathop{}_{\scriptstyle{B_{S_N}}}^{\rm{argmin}}||','\hat{y}_N',' - ','\hat{\hat{y}}_{S_N}','||^2_2','+||\lambda B_{S_N}||^2_2','$'],'Interpreter','latex','FontSize',18,'Units', 'Normalized')
 
 text(abcX,abcY,Etxt,'Units', 'Normalized','FontSize',abcFs,'FontWeight',abcFontWeight)
