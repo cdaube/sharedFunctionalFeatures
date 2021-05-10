@@ -1,7 +1,5 @@
-
 proj0257Dir = '/analyse/Project0257/';
 homeDir = '/analyse/cdhome/';
-%homeDir = '/home/chrisd/';
 
 addpath(genpath([homeDir 'exportFig/']))
 addpath(genpath([homeDir 'plotSpread/']))
@@ -48,11 +46,14 @@ tmp = tsne([thsActUntrained'; thsActTrained'],'Distance','euclidean','NumDimensi
 toSpread = reshape(tmp',[2 81 4 2]);
 titleTxts = {'Randomly initialised','Trained'};
 
+tmpMap = distinguishable_colors(50);
+jMap = tmpMap([45 47 48 49],:);
+
 figure(2)
 for tt = 1:2
     for cc = 1:4
         subplot(1,2,tt)
-        hs = scatter(toSpread(1,:,cc,tt),toSpread(2,:,cc,tt),30,jMap(cc,:),'filled');
+        hs = scatter(toSpread(1,:,cc,tt),toSpread(2,:,cc,tt),100,jMap(cc,:),'filled');
         axis image
         axis square
         hs.MarkerFaceAlpha = .3;
@@ -1529,7 +1530,8 @@ stack = @(x) x(:);
 stack2 = @(x) x(:,:);
 acc = squeeze(mean(bsxfun(@eq,chosenImages(:,:,:,1),chosenImages(:,:,:,sysSel))));
 toSpread = stack2(permute(acc(:,1:14,:),[3 1 2]))';
-jMap = [.9 0 0; 0 .6 0; 0 .4 .8; 1 .9 0];
+tmpMap = distinguishable_colors(50);
+jMap = tmpMap([45 47 48 49],:);
 mrkFcAlpha = .5;
 mdnWdth = .35;
 lW = 1;
@@ -1692,7 +1694,8 @@ nColl = 4;
 nPerms = 100;
 optObjective = 'KendallTau';
 
-jMap = [.9 0 0; 0 .6 0; 0 .4 .8; 1 .9 0];
+tmpMap = distinguishable_colors(50);
+jMap = tmpMap([45 47 48 49],:);
 cMap = distinguishable_colors(numel(fspcLabels));
 cMap = distinguishable_colors(numel(fspcLabels)+1);
 cMap = [[0 0 0]; cMap([8 1 9 10 11 6 5 2 3 7 12:numel(fspcLabels)+1],:)]; %
@@ -1878,7 +1881,8 @@ nColl = 4;
 nPerms = 100;
 optObjective = 'KendallTau';
 
-jMap = [.9 0 0; 0 .6 0; 0 .4 .8; 1 .9 0];
+tmpMap = distinguishable_colors(50);
+jMap = tmpMap([45 47 48 49],:);
 cMap = distinguishable_colors(numel(fspcLabels)+1);
 cMap = [[0 0 0]; cMap([8 1 9 10 11 6 5 2 3 7 12:numel(fspcLabels)+1],:)]; %
 
@@ -2069,7 +2073,8 @@ stack = @(x) x(:);
 stack2 = @(x) x(:,:);
 acc = squeeze(mean(bsxfun(@eq,chosenImages(:,:,:,1),chosenImages(:,:,:,sysSel))));
 toSpread = stack2(permute(acc(:,15,:),[3 1 2]))';
-jMap = [.9 0 0; 0 .6 0; 0 .4 .8; 1 .9 0];
+tmpMap = distinguishable_colors(50);
+jMap = tmpMap([45 47 48 49],:);
 mrkFcAlpha = .5;
 mdnWdth = .35;
 lW = 1;
@@ -2243,7 +2248,8 @@ nColl = 4;
 nPerms = 100;
 optObjective = 'KendallTau';
 
-jMap = [.9 0 0; 0 .6 0; 0 .4 .8; 1 .9 0];
+tmpMap = distinguishable_colors(50);
+jMap = tmpMap([45 47 48 49],:);
 cMap = distinguishable_colors(numel(fspcLabels));
 cMap = distinguishable_colors(numel(fspcLabels)+1);
 cMap = [[0 0 0]; cMap([8 1 9 10 11 6 5 2 3 7 12:numel(fspcLabels)+1],:)]; %
@@ -2555,7 +2561,8 @@ cMap = distinguishable_colors(43);
 cMap = cMap([8 1 9 6 5 2 3 7 12:43],:);
 cMap1 = cMap([1:9 17:25 28:40],:);
 
-jMap = [.9 0 0; 0 .6 0; 0 .4 .8; 1 .9 0];
+tmpMap = distinguishable_colors(50);
+jMap = tmpMap([45 47 48 49],:);
 
 figure(107)
 close 
@@ -2684,7 +2691,8 @@ cMap = distinguishable_colors(43);
 cMap = cMap([8 1 9 6 5 2 3 7 12:43],:);
 cMap1 = cMap([1:9 19 18 17 20:25 30 29 28 31:40],:);
 
-jMap = [.9 0 0; 0 .6 0; 0 .4 .8; 1 .9 0];
+tmpMap = distinguishable_colors(50);
+jMap = tmpMap([45 47 48 49],:);
 
 figure(108)
 close 
@@ -2811,7 +2819,8 @@ cMap = distinguishable_colors(43);
 cMap = cMap([8 1 9 6 5 2 3 7 12:43],:);
 cMap2 = [[0 0 0]; cMap([1:9 17:25 28:40],:)];
 
-jMap = [.9 0 0; 0 .6 0; 0 .4 .8; 1 .9 0];
+tmpMap = distinguishable_colors(50);
+jMap = tmpMap([45 47 48 49],:);
 
 figure(109)
 close 
@@ -2936,7 +2945,8 @@ cMap = distinguishable_colors(43);
 cMap = cMap([8 1 9 6 5 2 3 7 12:43],:);
 cMap2 = [[0 0 0]; cMap([1:9 17:25 28:40],:)];
 
-jMap = [.9 0 0; 0 .6 0; 0 .4 .8; 1 .9 0];
+tmpMap = distinguishable_colors(50);
+jMap = tmpMap([45 47 48 49],:);
 
 figure(110)
 close 
