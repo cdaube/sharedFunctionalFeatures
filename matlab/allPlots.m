@@ -606,13 +606,13 @@ subaxis(9,nFspc+1,[22 23 24 29 30 31],'Spacing',0.09);
 cla
 set(gca,'Visible','off')
 
-text(.1,1,['$1. ','\hat{y}_S = S B_{S}','$'],'Interpreter','latex','Interpreter','Latex','FontSize',18,'Units', 'Normalized')
+text(.1,1,['$1. \ ','\hat{y}_S = S B_{S}','$'],'Interpreter','latex','Interpreter','Latex','FontSize',18,'Units', 'Normalized')
 text(.15,.8,['$   ','\mathop{}_{\scriptstyle{B_{S}}}^{\rm{argmin}}||','y - ','\hat{y}_S','||^2_2','+||\lambda B_{S}||^2_2','$'],'Interpreter','latex','FontSize',18,'Units', 'Normalized')
 
-text(.1,.6,['$2. ','\hat{y}_N = N B_{N}','$'],'Interpreter','latex','Interpreter','Latex','FontSize',18,'Units', 'Normalized')
+text(.1,.6,['$2. \ ','\hat{y}_N = N B_{N}','$'],'Interpreter','latex','Interpreter','Latex','FontSize',18,'Units', 'Normalized')
 text(.15,.4,['$   ','\mathop{}_{\scriptstyle{B_{N}}}^{\rm{argmin}}||','y - ','\hat{y}_N','||^2_2','+||\lambda B_{N}||^2_2','$'],'Interpreter','latex','FontSize',18,'Units', 'Normalized')
 
-text(.1,.2,['$3. ','\hat{\hat{y}}_{S_N} = S B_{S_N}','$'],'Interpreter','latex','Interpreter','Latex','FontSize',18,'Units', 'Normalized')
+text(.1,.2,['$3. \ ','\hat{\hat{y}}_{S_N} = S B_{S_N}','$'],'Interpreter','latex','Interpreter','Latex','FontSize',18,'Units', 'Normalized')
 text(.15,.0,['$   ','\mathop{}_{\scriptstyle{B_{S_N}}}^{\rm{argmin}}||','\hat{y}_N',' - ','\hat{\hat{y}}_{S_N}','||^2_2','+||\lambda B_{S_N}||^2_2','$'],'Interpreter','latex','FontSize',18,'Units', 'Normalized')
 
 text(abcX,abcY,Etxt,'Units', 'Normalized','FontSize',abcFs,'FontWeight',abcFontWeight)
@@ -758,7 +758,7 @@ subjSpecMedian = median(stack3(permute(allCorrsInOut,[4 2 1 3])),3);
 ss = reprPart;   
 
 fspcSel2 = [fspcSel+1 1];
-fspcLblTxt2 = {fspcLblTxt{:}, 'Shape'};
+fspcLblTxt2 = {fspcLblTxt{:}, 'Human'};
 
 abcFs = 20;
 abcX = -.15;
@@ -1354,7 +1354,7 @@ for tt = 1:nTasks
         set(gca,'Position',[allPos(1,tt) thsPos(2)-.01 allPos(3,tt) thsPos(4)])
 
     if tt==1
-        ylabel({'\Delta accuracy \pm95%CI','(diagnostic - non-diagnostic)'})
+        ylabel({'\Delta accuracy \pm95%CI  ','(diagnostic - non-diagnostic)'})
         text(abcX,abcY,Dtxt,'Units', 'Normalized','FontSize',abcFs,'FontWeight',abcFontWeight)
         lh = legend(sysTxts,'NumColumns',3);
         lh.Position = lh.Position - [-.4 .238 0 0];
