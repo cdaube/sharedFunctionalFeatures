@@ -28,7 +28,7 @@ from resNetUtils import getActVAE
 inputShape = (224, 224, 3)
 latentSize = 512
 
-# build and compile the autoencoder
+# select encoder
 encoderTxt = ['RN10','DN19','RN34','RN50','RN10det','RN34det']
 encoderToggle = 4
 foTxt = ['','Fo']
@@ -48,7 +48,7 @@ elif encoderToggle==4:
 elif encoderToggle==5:
     encoder = ResNet34DetEncoder(inputShape, latentSize=latentSize)
 
-
+# create image dataframe
 basePth = proj0257Dir+'/christoph_face_render_withAUs_20190730/colleagueFaces355Models/'
 colleagueFileExtensions = ['501_2F_1WC_02_7Neutral_anglex2_angley2_anglelx2_anglely2.png',
                         '503_2F_1WC_02_7Neutral_anglex2_angley1_anglelx2_anglely2.png',
@@ -57,6 +57,7 @@ colleagueFileExtensions = ['501_2F_1WC_02_7Neutral_anglex2_angley2_anglelx2_angl
 
 spec_df = pd.DataFrame(columns={'filename'}, data=[(basePth+row).split() for row in colleagueFileExtensions])
 
+# create data generator
 testBatchSize = len(colleagueFileExtensions)
 spec_datagen = ImageDataGenerator(rescale=1./255)
 spec_generator = spec_datagen.flow_from_dataframe(
@@ -69,17 +70,19 @@ spec_generator = spec_datagen.flow_from_dataframe(
     shuffle=False,
     batch_size=testBatchSize)
 
+# get batch of 4 colleagues
 thsBatch, __ = next(spec_generator)
 
 destinDir = '/home/chrisd/ownCloud/FiguresDlFace/decode_viAE/'
 
+# build and compile the autoencoder
 decoder = Darknet19Decoder(inputShape, latentSize=latentSize)
 bvae = AutoEncoder(encoder, decoder)
 bvae.ae.compile(optimizer='adam', loss='mean_absolute_error')
 bvae.ae.load_weights(proj0257Dir+'aeModels/1stGen/001530SimStructk1ColleaguesRN10DN19viAE.h5')
-
+# get reconstructed image
 recon = bvae.ae.predict_on_batch(thsBatch)
-
+# save images
 for cc in range(len(spec_df)):
     data = thsBatch[cc,:,:,:]
     rescaled = (255.0 / data.max() * (data - data.min())).astype(np.uint8)
@@ -91,10 +94,11 @@ for cc in range(len(spec_df)):
     im = Image.fromarray(rescaled)
     im.save(destinDir+'decoded_viAE'+str(cc+1)+'.png')
 
+# build and compile the view invariant autoencoder
 bvae.ae.load_weights(proj0257Dir+'aeModels/1stGen/001530SimStructk1ColleaguesRN10DN19AE.h5')
-
+# get reconstructed image
 recon = bvae.ae.predict_on_batch(thsBatch)
-
+# save images
 for cc in range(len(spec_df)):
     data = recon[cc,:,:,:]
     rescaled = (255.0 / data.max() * (data - data.min())).astype(np.uint8)
