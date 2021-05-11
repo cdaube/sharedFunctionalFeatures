@@ -12,10 +12,10 @@ set(groot, ...
 'DefaultAxesXColor', 'k', ...
 'DefaultAxesYColor', 'k', ...
 'DefaultAxesFontUnits', 'points', ...
-'DefaultAxesFontSize', 14, ...
+'DefaultAxesFontSize', 18, ...
 'DefaultAxesFontName', 'Helvetica', ...
 'DefaultTextFontUnits', 'Points', ...
-'DefaultTextFontSize', 14, ...
+'DefaultTextFontSize', 18, ...
 'DefaultTextFontName', 'Helvetica');
 
 Atxt = 'A';
@@ -247,7 +247,7 @@ for fspc = plotOrder
             hps = plotSpread(toSpread1(:,1:2),'distributionColors',cMap(1:2,:));
             for ii = 1:numel(hps{1}); hps{1}{ii}.MarkerFaceAlpha = mrkFcAlpha; end
             ylabel('MI [bits]')
-            set(gca,'XTick',[1:2],'XTickLabel',{'Texture','Shape'})
+            set(gca,'XTick',[1:2],'XTickLabel',{'Texture  ','  Shape'})
             hold on
             for fspc = 1:2
                 thsSamples = extractedFitMI.b(:,fspcSelFit(fspc));
@@ -462,10 +462,10 @@ set(groot, ...
 'DefaultAxesXColor', 'k', ...
 'DefaultAxesYColor', 'k', ...
 'DefaultAxesFontUnits', 'points', ...
-'DefaultAxesFontSize', 14, ...
+'DefaultAxesFontSize', 18, ...
 'DefaultAxesFontName', 'Helvetica', ...
 'DefaultTextFontUnits', 'Points', ...
-'DefaultTextFontSize', 14, ...
+'DefaultTextFontSize', 18, ...
 'DefaultTextFontName', 'Helvetica');
 
 addpath(genpath([homeDir 'cbrewer/']))
@@ -518,11 +518,11 @@ abcY = 1.357;
 subaxis(10,5,[3 4 8 9],'PaddingBottom',.05)
     colorcubes(3,.5)
     view([-165 15])
-    annotation('arrow',[.52 .52],[.79 .87])
-    annotation('arrow',[.53 .625],[.78 .773])
-    annotation('arrow',[.635 .66],[.775 .795])
-    text(0.03,.27,'Vertical','Rotation',90,'Units','normalized')
-    text(0.27,-.04,'Horizontal','Rotation',-3.75,'Units','normalized')
+    annotation('arrow',[.52 .52],[.8 .87])
+    annotation('arrow',[.54 .615],[.7844 .7796])
+    annotation('arrow',[.625 .65],[.785 .805])
+    text(0.05,.11,'Vertical','Rotation',90,'Units','normalized')
+    text(0.12,-.04,'Horizontal','Rotation',-3.75,'Units','normalized')
     text(0.89,-.05,'Depth','Rotation',44,'Units','normalized')
     text(1.3,.6,{'\bullet in {\bfC}, colors map 3D reconstruction error', ...
         ['   with a range of 0 - ' num2str(max(stack(eucDistsV3D(relVert,:))),2) ' mm']},'Units','normalized')
@@ -617,10 +617,10 @@ text(.15,.0,['$   ','\mathop{}_{\scriptstyle{B_{S_N}}}^{\rm{argmin}}||','\hat{y}
 
 text(abcX,abcY,Etxt,'Units', 'Normalized','FontSize',abcFs,'FontWeight',abcFontWeight)
 
-% weight correlations and performances in single joint 2D plot
+% F weight correlations and performances in single joint 2D plot
 abcFs = 20;
 abcX = -.4;
-abcY = 1.15;
+abcY = 1.2;
 
 wdthOuter = 1;
 wdthInner = 3;
@@ -655,13 +655,14 @@ ha = subaxis(9,nFspc+1,[25 26 27 31 32 33],'Spacing',0.09);
     text(abcX,abcY,Ftxt,'Units', 'Normalized','FontSize',abcFs,'FontWeight',abcFontWeight)
     hl = legend([hs{:}],fspcLblTxt);
     twoDBoxPos = plotboxpos;
-    hl.Position = [hl.Position(1)+.025 hl.Position(2) hl.Position(3) hl.Position(4)];
+    hl.Position = [hl.Position(1)+.013 hl.Position(2) hl.Position(3) hl.Position(4)];
     legend boxoff
-    set(gca,'InnerPosition',twoDBoxPos-[.06 0 0 0])
+    set(gca,'InnerPosition',twoDBoxPos-[.11 0 0 0])
     
+% G
 abcFs = 20;
 abcX = -.45;
-abcY = 1.42;    
+abcY = 1.4;    
     
 load([proj0257Dir '/humanReverseCorrelation/rModels/hypotheses_repredictionsWeightCorrs.mat'])
 xLabelAngle2 = -60;
@@ -706,7 +707,7 @@ ha = subaxis(9,nFspc+1,[27 34],'Spacing',.01);
     text(abcX,abcY,Gtxt,'Units', 'Normalized','FontSize',abcFs,'FontWeight',abcFontWeight)
     title('$\rho(B_S,B_{S_N})$','Interpreter','latex','FontSize',18)
     hypBoxPos1 = plotboxpos;
-    set(gca,'Position',[hypBoxPos1(1) hypBoxPos1(2) corBoxPos(3) hypBoxPos1(4)])
+    set(gca,'Position',[hypBoxPos1(1) hypBoxPos1(2)+.01 corBoxPos(3) hypBoxPos1(4)])
     
 load([proj0257Dir '/humanReverseCorrelation/rModels/hypotheses_repredictionsRHatrHatHat.mat'])
 xLabelAngle2 = -60;
@@ -744,10 +745,9 @@ ha = subaxis(9,nFspc+1,[28 35],'Spacing',.01);
     set(gca,'YTickLabel',strcat(labelStrings2, sprintf('%s','\color[rgb]{0 0 0} > X')))
     set(gca,'XTickLabel',strcat(labelStrings2, sprintf('%s','\color[rgb]{0 0 0} < Y')),'XTickLabelRotation',xLabelAngle2)
     xlabel('Hypothesis')
-    ylabel('Hypothesis')
     title('$\rho(\hat{y}_S,\hat{\hat{y}}_{S_N})$','Interpreter','latex','FontSize',18)
     hypBoxPos2 = plotboxpos;
-    set(gca,'Position',[corBoxPos(1) hypBoxPos2(2) corBoxPos(3) hypBoxPos2(4)])
+    set(gca,'Position',[corBoxPos(1) hypBoxPos1(2)+.01 corBoxPos(3) hypBoxPos1(4)])
 
 % oFo,fspc,thsCollId,ss -> [fold coll ss] x fspc
 permutedCorr = permute(allCorrsInOut(:,:,:,ssSel),[2 1 3 4]);
@@ -824,10 +824,10 @@ set(groot, ...
 'DefaultAxesXColor', 'k', ...
 'DefaultAxesYColor', 'k', ...
 'DefaultAxesFontUnits', 'points', ...
-'DefaultAxesFontSize', 14, ...
+'DefaultAxesFontSize', 18, ...
 'DefaultAxesFontName', 'Helvetica', ...
 'DefaultTextFontUnits', 'Points', ...
-'DefaultTextFontSize', 14, ...
+'DefaultTextFontSize', 18, ...
 'DefaultTextFontName', 'Helvetica');
 
 addpath(genpath('/analyse/cdhome/PsychToolBox/'))
@@ -898,7 +898,7 @@ subplot(7,4,[3 4 7 8])
     plot([thsHpdi(2) thsHpdi(3)],[1 1],'k','LineWidth',3)
     hold off
     lh = legend([hHum; hl],{'Human',sysTxts{:}},'location','southeast','NumColumns',2);
-    lh.Position = lh.Position + [0 +.14 0 0];
+    lh.Position = lh.Position + [0 +.135 0 0];
     legend boxoff
     ylabel(['Predicted ratings \newline [normalized, median \pm95%CI]']);
     text(abcX,abcY,Btxt,'Units', 'Normalized','FontSize',abcFs,'FontWeight',abcFontWeight)
@@ -1354,7 +1354,7 @@ for tt = 1:nTasks
         set(gca,'Position',[allPos(1,tt) thsPos(2)-.01 allPos(3,tt) thsPos(4)])
 
     if tt==1
-        ylabel({'\Delta choice accuracy \pm 95%CI','(diagnostic - non-diagnostic)'})
+        ylabel({'\Delta accuracy \pm95%CI','(diagnostic - non-diagnostic)'})
         text(abcX,abcY,Dtxt,'Units', 'Normalized','FontSize',abcFs,'FontWeight',abcFontWeight)
         lh = legend(sysTxts,'NumColumns',3);
         lh.Position = lh.Position - [-.4 .238 0 0];
