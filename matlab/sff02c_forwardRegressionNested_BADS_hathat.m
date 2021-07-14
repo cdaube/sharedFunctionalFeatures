@@ -1,7 +1,7 @@
 % this function runs the forward regression re-predicting network
 % network predictions of human behaviour from GMF shape features
 
-function forwardRegressionNested_BADS_hathat(ssSel)
+function sff02c_forwardRegressionNested_BADS_hathat(ssSel)
 
 clearvars -except bothModels ssSel
 
@@ -32,43 +32,15 @@ allVAEBetas = [1 2 5 10 20];
 
 % in chronological order
 load([proj0257Dir 'humanReverseCorrelation/fromJiayu/extractedBehaviouralData.mat'])
+
 % in order of files
-latentVecAll = zeros(512,1800,3,2,2,2,numel(allVAEBetas));
-euclidToOrigAll = zeros(1800,3,2,2,2,numel(allVAEBetas));
-for be = 1:numel(allVAEBetas)
-    load([proj0257Dir '/humanReverseCorrelation/activations/vae/trialsRandom/latentVecs_beta' num2str(allVAEBetas(be)) '.mat'])
-    latentVecAll(:,:,:,:,:,:,be) = latentVec;
-    euclidToOrigAll(:,:,:,:,:,be) = euclidToOrig;
-end
-% in order of files
-load([proj0257Dir '/christoph_face_render_withAUs_20190730/colleaguesRandomJiayu/pca512_netTrainWAngles.mat']);
-pcaToSaveODwAng = pcaToSave;
-
-load('/analyse/Project0257/humanReverseCorrelation/activations/IDonly/trialsRandom/embeddingLayerActs.mat')
-idOnlyActs = classifierActs;
-idOnlyED = euclidToOrig;
-load('/analyse/Project0257/humanReverseCorrelation/activations/multiNet/trialsRandom/embeddingLayerActs.mat')
-multiActs = classifierActs;
-multiED = euclidToOrig;
-load('/analyse/Project0257/humanReverseCorrelation/activations/Triplet/trialsRandom/embeddingLayerActs.mat')
-tripletActs = tripletActs;
-tripletED = euclidToOrig;
-
-load([proj0257Dir '/humanReverseCorrelation/activations/IDonly/trialsRandom/embeddingLayerActs.mat'])
-allClassifierDecs(:,:,:,:,:,1) = classifierDecs;
-load([proj0257Dir '/humanReverseCorrelation/activations/multiNet/trialsRandom/embeddingLayerActs.mat'])
-allClassifierDecs(:,:,:,:,:,2) = classifierDecs;
-load([proj0257Dir '/humanReverseCorrelation/activations/classifierOnVAE/trialsRandom/classifierOnVAEDecs_depth0.mat'])
-allClassifierDecs(:,:,:,:,:,3) = classifierDecs;
-load([proj0257Dir '/humanReverseCorrelation/activations/classifierOnVAE/trialsRandom/classifierOnVAEDecs_depth2.mat'])
-allClassifierDecs(:,:,:,:,:,4) = classifierDecs;
-
-load([proj0257Dir '/humanReverseCorrelation/activations/viae/trialsRandom/latentVecs.mat'])
-viAEBottleneckAll = latentVec;
-load([proj0257Dir '/humanReverseCorrelation/activations/ae/trialsRandom/latentVecs.mat'])
-aeBottleneckAll = latentVec;
-load([proj0257Dir '/humanReverseCorrelation/activations/viae10/trialsRandom/latentVecs.mat'])
-viae10BottleneckAll = latentVec;
+disp('loading representations')
+[idOnlyActs, idOnlyED, idOnlyWiseED, multiActs, multiED, multiWiseED, ...
+    tripletActs, tripletED, tripletWiseED, ...
+    vaeBottleNeckAll, vaeED, vaeWiseED, viVAEBottleneckAll, viAEBottleneckAll, ...
+    viAEED, viAEWiseED, viAE10BottleneckAll, viAE10ED, viAE10WiseED, ...
+    aeBottleneckAll, aeED, aeWiseED, allClassifierDecs, ...
+    pcaToSaveID, pcaToSaveODwoAng, pcaToSaveODwAng, pcaED, pcaWiseED] = loadUnorderedRepresentations(proj0257Dir);
 
 load([proj0257Dir '/embeddingLayers2Faces/embeddingLayers2pcaCoeffs.mat'], ...
     'eucDistsT','eucDistsV','tCoeffR2','vCoeffR2','cTunT','cTunV','optHypersT','optHypersV', ...
@@ -216,7 +188,7 @@ for ss = ssSel
                 
                 viAEAll(:,tt) = viAEBottleneckAll(:,thsFile,thsCol,thsRow,id,gg);
                 aeAll(:,tt) = aeBottleneckAll(:,thsFile,thsCol,thsRow,id,gg);
-                viAE10All(:,tt) = viae10BottleneckAll(:,thsFile,thsCol,thsRow,id,gg);
+                viAE10All(:,tt) = viAE10BottleneckAll(:,thsFile,thsCol,thsRow,id,gg);
                 
                 % and pca features
                 pixelPCA512_OD_wAng(:,tt) = pcaToSaveODwAng(:,thsFile,thsCol,thsRow,gg,id); % have been stored differently from DNN features
