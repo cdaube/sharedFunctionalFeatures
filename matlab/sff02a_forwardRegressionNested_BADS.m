@@ -28,7 +28,11 @@ allNFeaturesPerSpace = {[1 355],[1 1775],[1 1],[1 4735],[1 1],[1 512],[1 512], .
     [1 512],[1 1],[1 512],[1 1],[1 512],[1 512],[1 1],[1 512],[1 512],[1 1],[1 512], ...
     [1 355],[1 355 1775],[1 355 512],[1 355 512],[1 355 512],[1 355 1775 512],[1 355 1775 512]};
 
-fspcSel = [60:65];
+%fspcSel = [1 2 22 6 7 53 48];
+
+fspcSel = [27 28 8 11 38 15 55 54 36 23 37 24 52 51 ...
+           5 33 31 34 32 35 25 43 58 56 57 13 14 45 ... 
+           20 21 60 61 62 63 64 65];
 
 [~,hostname] = system('hostname');
 if strcmp(hostname(1:6),'tianx-')
@@ -51,8 +55,6 @@ install
 
 
 useDevPathGFG
-
-pps = {'1','2','3','5','6','7','8','9','10','11','12','13','14','15'}; % subject 4 quit after 1 session
 
 % in chronological order
 load([proj0257Dir 'humanReverseCorrelation/fromJiayu/extractedBehaviouralData.mat'])
@@ -121,7 +123,7 @@ for ss = ssSel
         load([proj0257Dir 'humanReverseCorrelation/fromJiayu/IDcoeff' coeffFileNames{gg} '.mat']) % randomized PCA weights
         
         for id = 1:2
-            
+                        
             disp(['ss ' num2str(ss) ' gg ' num2str(gg) ' id ' num2str(id) ' ' datestr(clock,'HH:MM:SS')])
                        
             % transform gender and id indices into index ranging from 1:4
@@ -130,11 +132,12 @@ for ss = ssSel
             % collect all ratings (humans and dnns) in one matrix
             humanRatings = systemsRatings(:,thsCollId,ss,1);
             if ss < 15
-                humanRatingsB = rebin(systemsRatings(:,thsCollId,ss,1),nBins);
-            else
+                humanRatingsB = rebin(humanRatings,nBins);
+            elseif ss > 14
                 % cross participant average isn't discrete, so can't use
                 % rebin here
-                humanRatingsB = eqpop_slice_omp(systemsRatings(:,thsCollId,ss,1),nBins,nThreads);
+                humanRatingsB = NaN(size(humanRatings));
+                humanRatingsB(~isnan(humanRatings)) = eqpop_slice_omp(humanRatings(~isnan(humanRatings)),nBins,nThreads);
             end
             
             for fspc = fspcSel
@@ -171,7 +174,7 @@ for ss = ssSel
                 testR2 = zeros(cvStruct.nFolds,1);
                 testMIB = zeros(cvStruct.nFolds,1);
                 testKT = zeros(cvStruct.nFolds,1);
-                yHat = zeros(cvStruct.nSampTes,cvStruct.nFolds);
+                yHat = NaN(cvStruct.nSampTes,cvStruct.nFolds);
                 
                 mdlDev = zeros(sum(nFeaturesPerSpace),cvStruct.nFolds);
                 
@@ -221,6 +224,16 @@ for ss = ssSel
                     yTes = humanRatings(thsTes,1);
                     yTesB = humanRatingsB(thsTes,1);
                     
+                    % remove NaNs
+                    xDev(isnan(yDev),:) = [];
+                    yDevB(isnan(yDev)) = [];
+                    yDev(isnan(yDev)) = [];
+                    
+                    xTes(isnan(yTes),:) = [];
+                    yTesB(isnan(yTes)) = [];
+                    yTes(isnan(yTes)) = [];
+                    
+                    
                     % train model with this hyperparameter setting
                     M = buildMultiM(nFeaturesPerSpace,thsAvgHyper);
                     betasDev = (xDev'*xDev+M)\(xDev'*yDev);
@@ -235,20 +248,20 @@ for ss = ssSel
                     % measure dev performance
                     devMIB(oFo,1) = calc_info_slice_omp_integer_c_int16_t(...
                                 int16(yHatDevB),nBins,int16(yDevB),nBins,numel(yHatDev),nThreads) ... 
-                                - mmbias(nBins,nBins,cvStruct.nSamp);
+                                - mmbias(nBins,nBins,numel(yHatDev));
                     devR2(oFo,1) = getR2(yDev,yHatDev);
                     devKT(oFo,1) = corr(yDev,yHatDev,'type','Kendall');
                     
                     % predict test set
-                    yHat(:,oFo) = xTes*betasDev;
-                    yHatB = eqpop_slice_omp(yHat(:,oFo),nBins,nThreads);
+                    yHat(1:numel(yTes),oFo) = xTes*betasDev;
+                    yHatB = eqpop_slice_omp(yHat(1:numel(yTes),oFo),nBins,nThreads);
                     
                     % measure test performance
                     testMIB(oFo,1) = calc_info_slice_omp_integer_c_int16_t(...
-                                int16(yHatB),nBins,int16(yTesB),nBins,cvStruct.nSamp,nThreads) ... 
-                                - mmbias(nBins,nBins,cvStruct.nSamp);
-                    testR2(oFo,1) = getR2(yTes,yHat(:,oFo));
-                    testKT(oFo,1) = corr(yTes,yHat(:,oFo),'type','Kendall');
+                                int16(yHatB),nBins,int16(yTesB),nBins,numel(yTesB),nThreads) ... 
+                                - mmbias(nBins,nBins,numel(yTesB));
+                    testR2(oFo,1) = getR2(yTes,yHat(1:numel(yTes),oFo));
+                    testKT(oFo,1) = corr(yTes,yHat(1:numel(yTes),oFo),'type','Kendall');
                     
                 end
                 

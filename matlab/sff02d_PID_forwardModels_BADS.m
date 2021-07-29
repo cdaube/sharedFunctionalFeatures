@@ -31,6 +31,7 @@ fspcLabels = {'pixelPCA_od_WAng','shape','texture','shape&texture','shape&pixelP
     'netID','netMulti','VAE_{dn0}','VAE_{dn2}',};
 
 fspcSel = [3 2 1 6 7 8 9 10];
+fspcSel = [setxor(1:numel(fspcLabels),fspcSel) 2];
 
 fspcFixed = find(strcmpi(fspcLabels(fspcSel),'shape')); % indexes fspcSel
 fspcVar = setxor(1:numel(fspcSel),fspcFixed); % indexes fspcSel

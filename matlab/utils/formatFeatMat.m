@@ -54,12 +54,12 @@ if sum(strcmp(fspcLabel,{'shape','texture','\delta_{av vertex}', ...
     % get original face in vertex- and pixel space
     [shapeOrig, texOrig] = generate_person_GLM(model,allCVI(:,thsCollId),allCVV(gg,id),vcoeffOrig,tcoeffOrig,.6,true);
     
-    C = reshape(bothModels{gg}.Uv,[4735 3 355]);
-    C = stack2(permute(C(relVert,:,:),[3 1 2]))';
-    
     % get relevant vertex indices
     load default_face.mat
     relVert = unique(nf.fv(:));
+    
+    C = reshape(model.Uv,[4735 3 355]);
+    C = stack2(permute(C(relVert,:,:),[3 1 2]))';
     
     % preallocate variables
     shaAll = zeros(nCoeff,nShapeCoeffDim,nTrials);

@@ -1,6 +1,7 @@
 proj0257Dir = '/analyse/Project0257/';
 homeDir = '/analyse/cdhome/';
 
+addpath(genpath('/analyse/cdhome/dlfaceScripts/'))
 addpath(genpath([homeDir 'exportFig/']))
 addpath(genpath([homeDir 'plotSpread/']))
 addpath(genpath([homeDir 'cdCollection/']))
@@ -28,6 +29,8 @@ Gtxt = 'G';
 Htxt = 'H';
 abcFontWeight = 'bold';
 spelling = 'AE';
+writeToDisk = true;
+closeFigures = true;
 
 stack = @(x) x(:);
 stack2 = @(x) x(:,:);
@@ -71,16 +74,35 @@ for tt = 1:2
     title(titleTxts{tt})
 end
 
+if writeToDisk
+    % maximise figure window for print-ready figure
+    figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
+    fig = gcf;
+    fig.Color = [1 1 1];
+    fig.InvertHardcopy = 'off';
+    fig.PaperUnits = 'centimeters';
+    fig.PaperPosition = [0 0 30 15];
+    fig.PaperSize = [30 15];
+    print(fig,'-dpdf','-r300',[figDir 'SX_TripletDemo.pdf'])
+    if closeFigures
+        close
+    end
+end
 
-% maximise figure window for print-ready figure
-figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
-fig = gcf;
-fig.Color = [1 1 1];
-fig.InvertHardcopy = 'off';
-fig.PaperUnits = 'centimeters';
-fig.PaperPosition = [0 0 30 15];
-fig.PaperSize = [30 15];
-print(fig,'-dpdf','-r300',[figDir 'SX_TripletDemo.pdf'])
+%% prepare supplemental table ranking all models on all comparisons
+
+coreFspcs = {'pixelPCA_od_WAng','shape','texture', ...
+    'triplet','netID_{9.5}','netMulti_{9.5}','AE','viAE10','\beta=1 VAE', ...
+    '\delta_{pixelPCAwAng}','\delta_{shapeCoeff}','\delta_{texCoeff}','\delta_{triplet}', ...
+        '\delta_{netID}','\delta_{netMulti}','\delta_{ae}','\delta_{viAE10}','\delta_{\beta=1 VAE}', ...
+    '\delta_{pixelPCAwAngWise}','\delta_{shapeCoeffWise}','\delta_{texCoeffWise}', ...
+    '\delta_{tripletWise}','\delta_{netIDWise}','\delta_{netMultiWise}','\delta_{aeWise}','\delta_{viAE10Wise}', ...
+        '\delta_{\beta=1 VAEWise}',  ...
+    'netID','netMulti','VAE_{dn0}','VAE_{dn2}'};
+
+nComparisons = 12;
+
+allMAP = NaN(numel(coreFspcs),nComparisons);
 
 %% figure 3: performance comparison & PID
 
@@ -103,7 +125,7 @@ fspcLabels = {'pixelPCA_od_WAng','shape','texture','shape&texture','shape&pixelP
     '\delta_{pixelPCAwAngWise}','\delta_{shapeCoeffWise}','\delta_{texCoeffWise}', ...
     '\delta_{tripletWise}','\delta_{netIDWise}','\delta_{netMultiWise}','\delta_{aeWise}','\delta_{viAE10Wise}', ...
         '\delta_{\beta=1 VAEWise}',  ...
-    'netID','netMulti','VAE_{dn0}','VAE_{dn2}',};
+    'netID','netMulti','VAE_{dn0}','VAE_{dn2}'};
 fspcLblTxts = {'pixelPCA','Shape','Texture','Shape&Texture','Shape&pixelPCA', ...
     'Triplet_{emb}','ClassID_{emb}','ClassMulti_{emb}','AE_{emb}','viAE_{emb}','VAE_{emb}','\beta=10-VAE_{emb}', ...
     'Shape&AE_{emb}','Shape&viAE_{emb}','Shape&VAE_{emb}','Shape&ClassMulti_{emb}&VAE','Shape&Texture&AE_{emb}','Shape&Texture&viAE_{emb}', ...
@@ -299,6 +321,9 @@ for fspc = plotOrder
     end
 end
 hold off
+subplot(5,6,[2 8 14])
+    legend([hpdiH{1}{1} hpdiH{2}{1}],fspcLblTxts{fspcSel(1:2)},'location','northwest')
+    legend boxoff
 ah1.InnerPosition([2 4]) = ahPos([2 4]);
 subplot(5,6,[4:6 10:12 16:18])
     legend([hpdiH{3}{1} hpdiH{4}{1} hpdiH{5}{1} hpdiH{6}{1} hpdiH{7}{1} hpdiH{8}{1}],fspcLblTxts{fspcSel(3:end)},'location','northwest')
@@ -444,15 +469,19 @@ ha = subplot(5,6,29);
     ha.Position = thsSz + [.05 0 0 0];
     title('Redundancy')
     
-    
-figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
-fig = gcf;
-fig.Position = [1000 10 1250 1250];
-fig.PaperUnits = 'centimeters';
-fig.PaperPosition = [0 0 45 35];
-fig.PaperSize = [45 35];
-set(gcf,'Color',[1 1 1])
-export_fig([figDir 'F3_MIRedDiagonal_revised.pdf'],'-nocrop','-pdf','-opengl')
+if writeToDisk
+    figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
+    fig = gcf;
+    fig.Position = [1000 10 1250 1250];
+    fig.PaperUnits = 'centimeters';
+    fig.PaperPosition = [0 0 45 35];
+    fig.PaperSize = [45 35];
+    set(gcf,'Color',[1 1 1])
+    export_fig([figDir 'F3_MIRedDiagonal_revised.pdf'],'-nocrop','-pdf','-opengl')
+    if closeFigures
+        close
+    end
+end
 
 %% figure 4: mass multivariate decoding and repredictions
 
@@ -526,7 +555,7 @@ subaxis(10,5,[3 4 8 9],'PaddingBottom',.05)
     text(0.89,-.05,'Depth','Rotation',44,'Units','normalized')
     text(1.3,.6,{'\bullet in {\bfC}, colors map 3D reconstruction error', ...
         ['   with a range of 0 - ' num2str(max(stack(eucDistsV3D(relVert,:))),2) ' mm']},'Units','normalized')
-    text(1.3,.3,{'\bullet in {\bfH}, Colors map 3D weights [a.u.]'},'Units','normalized')
+    text(1.3,.3,{'\bullet in {\bfH}, colors map 3D weights [a.u.]'},'Units','normalized')
     text(abcX,abcY,Btxt,'Units', 'Normalized','FontSize',abcFs,'FontWeight',abcFontWeight)
 
 % C
@@ -807,16 +836,20 @@ for fspc = 1:nFspc+1
     end
 end
 
-
-% maximise figure window for print-ready figure    
-figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
-fig = gcf;
-fig.Color = [1 1 1];
-fig.InvertHardcopy = 'off';
-fig.PaperUnits = 'centimeters';
-fig.PaperPosition = [0 0 43 50];
-fig.PaperSize = [43 50];
-print(fig,'-dpdf','-r300',[figDir 'F4_eucDist_MassMultiVariate_&repredictions_revised.pdf'],'-opengl')
+if writeToDisk
+    % maximise figure window for print-ready figure    
+    figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
+    fig = gcf;
+    fig.Color = [1 1 1];
+    fig.InvertHardcopy = 'off';
+    fig.PaperUnits = 'centimeters';
+    fig.PaperPosition = [0 0 43 50];
+    fig.PaperSize = [43 50];
+    print(fig,'-dpdf','-r300',[figDir 'F4_eucDist_MassMultiVariate_&repredictions_revised.pdf'],'-opengl')
+    if closeFigures
+        close
+    end
+end
 
 %% figure 5: reconstructed face examples
 
@@ -1259,13 +1292,18 @@ subaxis(7,4,28,'Spacing',0)
     thsPos = plotboxpos;
     set(gca,'Position',thsPos-[-.011 .04 0 0]);
     
-figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
-fig = gcf;
-fig.Position = [1200 10 900 1275];
-fig.PaperUnits = 'centimeters';
-fig.PaperPosition = [0 0 40 55];
-fig.PaperSize = [40 55];
-print(fig,'-dpdf','-r300',[figDir 'F5_decoding_tuning_revised.pdf'],'-opengl')
+if writeToDisk
+    figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
+    fig = gcf;
+    fig.Position = [1200 10 900 1275];
+    fig.PaperUnits = 'centimeters';
+    fig.PaperPosition = [0 0 40 55];
+    fig.PaperSize = [40 55];
+    print(fig,'-dpdf','-r300',[figDir 'F5_decoding_tuning_revised.pdf'],'-opengl')
+    if closeFigures
+        close
+    end
+end
 
 
 %% figure 6: generalisation testing
@@ -1388,6 +1426,7 @@ for tt = 1:5
     
     for fspc = 1:nFspc
         thsSamples = allSamples(:,tt,fspc);
+        allMAP(mapFspcLblsToCore(sysTxts{fspc+1}),7+tt) = getMAP(thsSamples)-mean(stack(sum(allAccDelta(tt,:,:,1:14,sysSubSel(fspc)))));
         [f(:,fspc),xi(:,fspc)] = ksdensity(thsSamples(:));
     end
     
@@ -1481,15 +1520,77 @@ for tt = 1:5
     end
 end
 
-figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
-fig = gcf;
-fig.Position = [1200 10 1200 1275];
-fig.PaperUnits = 'centimeters';
-fig.PaperPosition = [0 0 50 55];
-fig.PaperSize = [50 55];
-print(fig,'-dpdf','-r300',[figDir 'F6_generalisationTesting_revised.pdf'],'-opengl')
+if writeToDisk
+    figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
+    fig = gcf;
+    fig.Position = [1200 10 1200 1275];
+    fig.PaperUnits = 'centimeters';
+    fig.PaperPosition = [0 0 50 55];
+    fig.PaperSize = [50 55];
+    print(fig,'-dpdf','-r300',[figDir 'F6_generalisationTesting_revised.pdf'],'-opengl')
+    if closeFigures
+        close
+    end
+end
 
-%% Figure S1: choice behaviour of models
+%% Figure S1: distribution of behavioural data
+
+set(groot, ...
+'DefaultAxesXColor', 'k', ...
+'DefaultAxesYColor', 'k', ...
+'DefaultAxesFontUnits', 'points', ...
+'DefaultAxesFontSize', 17, ...
+'DefaultAxesFontName', 'Helvetica', ...
+'DefaultTextFontUnits', 'Points', ...
+'DefaultTextFontSize', 17, ...
+'DefaultTextFontName', 'Helvetica');
+suppMatRes = '-r200';
+
+figure(101)
+close
+figure(101)
+fig = gcf;
+fig.Position = [1200 600 850 650];
+
+tmpMap = distinguishable_colors(50);
+jMap = tmpMap([45 47 48 49],:);
+
+load('/analyse/Project0257/humanReverseCorrelation/fromJiayu/extractedBehaviouralData.mat')
+
+lW = 1;
+mdnWdth = .45;
+for bb = 1:6
+    
+    toSpread = sum(systemsRatings(:,:,1:14,1)==bb);
+    catIdx = repmat((1:4)',14,1);
+    hps = plotSpread(toSpread(:),'categoryIdx',catIdx(:), ...
+        'CategoryColors',jMap,'xValues',bb);
+    hold on
+    mh = plot([bb-mdnWdth bb+mdnWdth],[median(toSpread(:)) median(toSpread(:))],'Color','k','LineWidth',lW);
+end
+hold off
+grid on
+set(gca,'XTick',1:6)
+lh = legend([hps{1}{1,1}, hps{1}{1,2}, hps{1}{1,3}, hps{1}{1,4}, mh], ...
+        'Colleague 1','Colleague 2','Colleague 3','Colleague 4','Pooled median','location','northeast');
+legend boxoff
+xlabel('Response')
+ylabel('Frequency')
+
+if writeToDisk
+    figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
+    fig = gcf;
+    fig.Position = [1200 600 850 650];
+    fig.PaperUnits = 'centimeters';
+    fig.PaperPosition = [0 0 20 20];
+    fig.PaperSize = [20 20];
+    print(fig,'-dpdf',suppMatRes,[figDir 'S1_responseDistribution.pdf'],'-opengl')
+    if closeFigures
+        close
+    end
+end
+
+%% Figure S2: choice behaviour of models
 
 proj0257Dir = '/analyse/Project0257/';
 load([proj0257Dir '/humanReverseCorrelation/fromJiayu/extractedBehaviouralData.mat'], ...
@@ -1522,7 +1623,7 @@ sysSel = [22 21 30 26 23 24 28 29 25 ...
       
 cMap = distinguishable_colors(43);
 cMap = cMap([9 1 8 6 5 2 3 7 12:43],:); %
-cMap = [[0 0 0]; cMap([1 2 3 4 5 6 7 8 9 17 18 19 20:25 28 29 30 31:40],:)];
+cMap = [[0 0 0]; cMap([3 2 1 4 5 6 7 8 9 17 18 19 20:25 28 29 30 31:40],:)];
 
 nPps = 14;
 nColl = 4;
@@ -1535,7 +1636,7 @@ jMap = tmpMap([45 47 48 49],:);
 mrkFcAlpha = .5;
 mdnWdth = .35;
 lW = 1;
-xLabelAngle = -45;
+xLabelAngle = -70;
 
 load([proj0257Dir '/humanReverseCorrelation/forwardRegression/hum2hum/hum2humRatings&Choices.mat'],...
     'allP2PcTriu')
@@ -1551,9 +1652,9 @@ save([proj0257Dir '/humanReverseCorrelation/rTables/forwardModels_panelAccuracy.
     
 load('/analyse/Project0257/humanReverseCorrelation/rModels/extractedFit_panelAccuracy.mat')
 
-figure(101)
+figure(102)
 close
-figure(101)
+figure(102)
 fig = gcf;
 fig.Position = [1000 1 1200 1200];
 
@@ -1583,6 +1684,7 @@ labelStrings1 = cell(numel(sysSel),1);
 for fspc = 1:numel(sysSel)+1
     if fspc>1
         thsSamples = extractedFit.b(:,fspc-1);
+        allMAP(mapFspcLblsToCore(fspcLblTxts{fspc}),1) = getMAP(thsSamples);
         [f,xi] = ksdensity(thsSamples(:));
         hf = fill((f./max(f).*(2*mdnWdth)) + (fspc-1)*1+.5+(.5-mdnWdth),xi,[0 0 0]);
         hf.EdgeColor = 'none';
@@ -1646,21 +1748,26 @@ ha = subaxis(3,4,[5:12],'PaddingTop',.07);
     ha.Position = thsSz;
     text(abcX,abcY,Btxt,'Units', 'Normalized','FontSize',abcFs,'FontWeight',abcFontWeight)
 
-figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
-fig = gcf;
-fig.Position = [1000 1 1200 1200];
-fig.Color = [1 1 1];
-fig.InvertHardcopy = 'off';
-fig.PaperUnits = 'centimeters';
-fig.PaperPosition = [0 0 35 50];
-fig.PaperSize = [35 50];
-print(fig,'-dpdf','-r300',[figDir 'S1_choiceBehaviour_revised.pdf'],'-opengl')
+if writeToDisk
+    figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
+    fig = gcf;
+    fig.Position = [1000 1 1200 1200];
+    fig.Color = [1 1 1];
+    fig.InvertHardcopy = 'off';
+    fig.PaperUnits = 'centimeters';
+    fig.PaperPosition = [0 0 37 50];
+    fig.PaperSize = [37 50];
+    print(fig,'-dpdf',suppMatRes,[figDir 'S2_choiceBehaviour_revised.pdf'],'-opengl')
+    if closeFigures
+        close
+    end
+end
 
-%% figure S2: all feature spaces
+%% figure S3: all feature spaces MI
 
-figure(102)
+figure(103)
 close
-figure(102)
+figure(103)
 fig = gcf;
 fig.Position = [1000 1 1200 1200];
 
@@ -1745,7 +1852,7 @@ abcY = 1;
 
 mdnWdth = .4;
 lW = 1;
-xLabelAngle = -60;
+xLabelAngle = -70;
 hSpace = .5;
 
 axLims = [min(log([allMIB(:)]-minVal))-.4 max(log([allMIB(:)]-minVal))];
@@ -1777,6 +1884,7 @@ subplot(3,4,1:4)
     for fspc = 1:nFspc+1
         if fspc > 1
             thsSamples = extractedFit.b(:,fspc-1);
+            allMAP(mapFspcLblsToCore(fspcLblTxts{fspc}),2) = getMAP(thsSamples);
             [f,xi] = ksdensity(thsSamples(:));
             hf = fill((f./max(f).*(2*mdnWdth)) + (fspc-1)+.5+(.5-mdnWdth),xi,[0 0 0]);
             hf.EdgeColor = 'none';
@@ -1839,17 +1947,22 @@ ha = subaxis(3,4,[5:12],'PaddingTop',.07);
     ha.Position = thsSz;
     text(abcX,abcY,Btxt,'Units', 'Normalized','FontSize',abcFs,'FontWeight',abcFontWeight)
     
-figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
-fig = gcf;
-fig.Position = [1000 1 1200 1200];
-fig.Color = [1 1 1];
-fig.InvertHardcopy = 'off';
-fig.PaperUnits = 'centimeters';
-fig.PaperPosition = [0 0 35 50];
-fig.PaperSize = [35 50];
-print(fig,'-dpdf','-r300',[figDir 'S2_allFeatureSpaces_revisions.pdf'],'-opengl')
+if writeToDisk
+    figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
+    fig = gcf;
+    fig.Position = [1000 1 1200 1200];
+    fig.Color = [1 1 1];
+    fig.InvertHardcopy = 'off';
+    fig.PaperUnits = 'centimeters';
+    fig.PaperPosition = [0 0 37 50];
+    fig.PaperSize = [37 50];
+    print(fig,'-dpdf',suppMatRes,[figDir 'S3_allFeatureSpaces_revisions.pdf'],'-opengl')
+    if closeFigures
+        close
+    end
+end
 
-%% figure S3: all feature spaces (Kendall's Tau)
+%% figure S4: all feature spaces (Kendall's Tau)
 
 proj0257Dir = '/analyse/Project0257/';
 
@@ -1932,12 +2045,12 @@ abcY = 1;
 
 mdnWdth = .4;
 lW = 1;
-xLabelAngle = -60;
+xLabelAngle = -70;
 hSpace = .5;
 
-figure(103)
+figure(104)
 close 
-figure(103)
+figure(104)
 
 subplot(3,4,1:4)
     toSpread = allKT;
@@ -2022,17 +2135,22 @@ ha = subaxis(3,4,[5:12],'PaddingTop',.07);
     ha.Position = thsSz;
     text(abcX,abcY,Btxt,'Units', 'Normalized','FontSize',abcFs,'FontWeight',abcFontWeight)
     
-figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
-fig = gcf;
-fig.Position = [1000 1 1200 1200];
-fig.Color = [1 1 1];
-fig.InvertHardcopy = 'off';
-fig.PaperUnits = 'centimeters';
-fig.PaperPosition = [0 0 35 50];
-fig.PaperSize = [35 50];
-print(fig,'-dpdf','-r300',[figDir 'S3_allFeatureSpaces_KendallTau_revisions.pdf'],'-opengl')
+if writeToDisk
+    figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
+    fig = gcf;
+    fig.Position = [1000 1 1200 1200];
+    fig.Color = [1 1 1];
+    fig.InvertHardcopy = 'off';
+    fig.PaperUnits = 'centimeters';
+    fig.PaperPosition = [0 0 37 50];
+    fig.PaperSize = [37 50];
+    print(fig,'-dpdf',suppMatRes,[figDir 'S4_allFeatureSpaces_KendallTau_revisions.pdf'],'-opengl')
+    if closeFigures
+        close
+    end
+end
 
-%% Figure S4: choice behaviour of models, cross participant average
+%% Figure S5: choice behaviour of models, cross participant average
 
 proj0257Dir = '/analyse/Project0257/';
 load([proj0257Dir '/humanReverseCorrelation/fromJiayu/extractedBehaviouralData.mat'], ...
@@ -2065,7 +2183,7 @@ sysSel = [22 21 30 26 23 24 28 29 25 ...
       
 cMap = distinguishable_colors(43);
 cMap = cMap([9 1 8 6 5 2 3 7 12:43],:); %
-cMap = [[0 0 0]; cMap([1 2 3 4 5 6 7 8 9 17 18 19 20:25 28 29 30 31:40],:)];
+cMap = [[0 0 0]; cMap([3 2 1 4 5 6 7 8 9 17 18 19 20:25 28 29 30 31:40],:)];
 
 nPps = 1;
 nColl = 4;
@@ -2078,7 +2196,7 @@ jMap = tmpMap([45 47 48 49],:);
 mrkFcAlpha = .5;
 mdnWdth = .35;
 lW = 1;
-xLabelAngle = -45;
+xLabelAngle = -70;
 
 load([proj0257Dir '/humanReverseCorrelation/forwardRegression/hum2hum/hum2humRatings&Choices.mat'],...
     'allP2PcTriu')
@@ -2105,9 +2223,9 @@ save([proj0257Dir '/humanReverseCorrelation/rTables/forwardModels_panelAccuracy_
     
 load('/analyse/Project0257/humanReverseCorrelation/rModels/extractedFit_panelAccuracy_cpa.mat')
 
-figure(104)
+figure(105)
 close
-figure(104)
+figure(105)
 fig = gcf;
 fig.Position = [1000 1 1200 1200];
 
@@ -2200,21 +2318,26 @@ ha = subaxis(3,4,[5:12],'PaddingTop',.07);
     ha.Position = thsSz;
     text(abcX,abcY,Btxt,'Units', 'Normalized','FontSize',abcFs,'FontWeight',abcFontWeight)
 
-figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
-fig = gcf;
-fig.Position = [1000 1 1200 1200];
-fig.Color = [1 1 1];
-fig.InvertHardcopy = 'off';
-fig.PaperUnits = 'centimeters';
-fig.PaperPosition = [0 0 35 50];
-fig.PaperSize = [35 50];
-print(fig,'-dpdf','-r300',[figDir 'S4_choiceBehaviour_cpa_revised.pdf'],'-opengl')
+if writeToDisk
+    figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
+    fig = gcf;
+    fig.Position = [1000 1 1200 1200];
+    fig.Color = [1 1 1];
+    fig.InvertHardcopy = 'off';
+    fig.PaperUnits = 'centimeters';
+    fig.PaperPosition = [0 0 37 50];
+    fig.PaperSize = [37 50];
+    print(fig,'-dpdf',suppMatRes,[figDir 'S5_choiceBehaviour_cpa_revised.pdf'],'-opengl')
+    if closeFigures
+        close
+    end
+end
 
-%% S5 forward model comparison on cross-participant average
+%% S6 forward model comparison on cross-participant average
 
-figure(105)
+figure(106)
 close
-figure(105)
+figure(106)
 fig = gcf;
 fig.Position = [1000 1 1200 1200];
 
@@ -2229,7 +2352,7 @@ fspcLabels = {'texture','shape','pixelPCA_od_WAng','shape&texture','shape&pixelP
     '\delta_{texCoeffWise}','\delta_{shapeCoeffWise}','\delta_{pixelPCAwAngWise}', ...
     '\delta_{tripletWise}','\delta_{netIDWise}','\delta_{netMultiWise}','\delta_{aeWise}','\delta_{viAE10Wise}', ...
         '\delta_{\beta=1 VAEWise}',  ...
-    'netID','netMulti','VAE_{dn0}','VAE_{dn2}',};
+    'netID','netMulti','VAE_{dn0}','VAE_{dn2}'};
 fspcLblTxts = {'Human','Texture','Shape','pixelPCA','Shape&Texture','Shape&pixelPCA', ...
     'Triplet_{emb}','ClassID_{emb}','ClassMulti_{emb}','AE_{emb}','viAE_{emb}','VAE_{emb}','\beta=10-VAE_{emb}', ...
     'Shape&AE_{emb}','Shape&viAE_{emb}','Shape&VAE_{emb}','Shape&ClassMulti_{emb}&VAE','Shape&Texture&AE_{emb}','Shape&Texture&viAE_{emb}', ...
@@ -2316,7 +2439,7 @@ abcY = 1;
 
 mdnWdth = .4;
 lW = 1;
-xLabelAngle = -60;
+xLabelAngle = -70;
 hSpace = .5;
 
 axLims = [min(log([allMIB(:)]-minVal))-.4 max(log([allMIB(:)]-minVal))];
@@ -2406,21 +2529,218 @@ ha = subaxis(3,4,[5:12],'PaddingTop',.07);
     ha.Position = thsSz;
     text(abcX,abcY,Btxt,'Units', 'Normalized','FontSize',abcFs,'FontWeight',abcFontWeight)
     
-figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
+if writeToDisk
+    figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
+    fig = gcf;
+    fig.Position = [1000 1 1200 1200];
+    fig.Color = [1 1 1];
+    fig.InvertHardcopy = 'off';
+    fig.PaperUnits = 'centimeters';
+    fig.PaperPosition = [0 0 37 50];
+    fig.PaperSize = [37 50];
+    print(fig,'-dpdf',suppMatRes,[figDir 'S6_allFeatureSpaces_revisions_cpa.pdf'],'-opengl')
+    if closeFigures
+        close
+    end
+end
+
+
+%% S7 Redundancy for broader set of forward models
+
+figure(107)
+close
+figure(107)
 fig = gcf;
 fig.Position = [1000 1 1200 1200];
-fig.Color = [1 1 1];
-fig.InvertHardcopy = 'off';
-fig.PaperUnits = 'centimeters';
-fig.PaperPosition = [0 0 35 50];
-fig.PaperSize = [35 50];
-print(fig,'-dpdf','-r300',[figDir 'S5_allFeatureSpaces_revisions_cpa.pdf'],'-opengl')
 
-%% S6 amplification tuning responses other systems
+proj0257Dir = '/analyse/Project0257/';
+
+fspcLabels = {'texture','shape','pixelPCA_od_WAng','shape&texture','shape&pixelPCAwAng', ...
+    'triplet','netID_{9.5}','netMulti_{9.5}','AE','viAE10','\beta=1 VAE','\beta=10 VAE', ...
+    'shape&AE','shape&viAE10','shape&\beta=1-VAE','shape&netMulti_{9.5}&\beta=1-VAE','shape&texture&AE','shape&texture&viAE10', ...
+    '\delta_{texCoeff}','\delta_{shapeCoeff}','\delta_{pixelPCAwAng}','\delta_{triplet}','\delta_{netID}','\delta_{netMulti}', ...
+        '\delta_{ae}','\delta_{viAE10}','\delta_{\beta=1 VAE}', ...
+    '\delta_{vertex}','\delta_{pixel}', ...
+    '\delta_{texCoeffWise}','\delta_{shapeCoeffWise}','\delta_{pixelPCAwAngWise}', ...
+    '\delta_{tripletWise}','\delta_{netIDWise}','\delta_{netMultiWise}','\delta_{aeWise}','\delta_{viAE10Wise}', ...
+        '\delta_{\beta=1 VAEWise}',  ...
+    'netID','netMulti','VAE_{dn0}','VAE_{dn2}',};
+fspcLblTxts = {'Texture','pixelPCA','Shape&Texture','Shape&pixelPCA', ...
+    'Triplet_{emb}','ClassID_{emb}','ClassMulti_{emb}','AE_{emb}','viAE_{emb}','VAE_{emb}','\beta=10-VAE_{emb}', ...
+    'Shape&AE_{emb}','Shape&viAE_{emb}','Shape&VAE_{emb}','Shape&ClassMulti_{emb}&VAE','Shape&Texture&AE_{emb}','Shape&Texture&viAE_{emb}', ...
+    'Texture_{\delta}','Shape_{\delta}','pixelPCA_{\delta}','Triplet_{\delta}','ClassID_{\delta}','ClassMulti_{\delta}','AE_{\delta}','viAE_{\delta}','VAE_{\delta}', ...
+    'ShapeVertex_{\delta}','TexturePixel_{\delta}', ...
+    'Texture_{\delta-lincomb}','Shape_{\delta-lincomb}','pixelPCA_{\delta-lincomb}','Triplet_{\delta-lincomb}', ...
+        'ClassID_{\delta-lincomb}','ClassMulti_{\delta-lincomb}','AE_{\delta-lincomb}', ...
+        'viAE_{\delta-lincomb}','VAE_{\delta-lincomb}', ...    
+    'ClassID_{dn}','ClassMulti_{dn}','VAE_{ldn}','VAE_{nldn}'};
+
+fspcSel = 1:numel(fspcLabels);
+fspcFixed = find(strcmpi(fspcLabels(fspcSel),'shape')); % indexes fspcSel
+fspcVar = setxor(1:numel(fspcSel),fspcFixed); % indexes fspcSel
+nFspc = numel(fspcSel); 
+nFspcR = numel(fspcVar);
+
+nPps = 14;
+nFolds = 9;
+nColl = 4;
+
+tmpMap = distinguishable_colors(50);
+jMap = tmpMap([45 47 48 49],:);
+cMap = distinguishable_colors(numel(fspcLabels));
+cMap = distinguishable_colors(numel(fspcLabels)+1);
+cMap = [cMap([8 1 9 10 11 6 5 2 3 7 12:numel(fspcLabels)+1],:)]; %
+cMap = cMap(fspcVar,:);
+
+stack = @(x) x(:);
+
+% collect data
+redAll = zeros(cvStruct.nFolds,nFspcR,nColl,nPps);
+synAll = zeros(cvStruct.nFolds,nFspcR,nColl,nPps);
+unqAll = zeros(cvStruct.nFolds,nFspcR,nColl,nPps);
+
+for ss = 1:nPps
+    for thsCollId = 1:nColl
+        for fspc = 1:numel(fspcVar)
+            
+            load([proj0257Dir 'humanReverseCorrelation/forwardRegression/BADSpid/PID_shape_&_' ...
+                fspcLabels{fspcSel(fspcVar(fspc))} '_ss' num2str(ss) '_id' num2str(thsCollId) '.mat'],'red','syn','unqA')
+            
+            redAll(:,fspc,thsCollId,ss) = red;
+            synAll(:,fspc,thsCollId,ss) = syn;
+            unqAll(:,fspc,thsCollId,ss) = unqA;
+            
+        end
+    end
+end
+
+% export for R
+nofx = @(x,n) x(n);
+minVal = min(redAll(:))-.01;
+foldIdx = stack(bsxfun(@times,stack(1:nFolds),ones([1, nofx(size(redAll),2:4)])));
+fspcIdx = stack(bsxfun(@times,1:nFspcR,ones([nFolds 1 nColl nPps])));
+fspcsIdx = repmat(repelem(bsxfun(@eq,1:nFspcR,(1:nFspcR)'),nFolds,1),[nColl*nPps 1]);
+collIdx = stack(bsxfun(@times,permute(1:nColl,[1 3 2]),ones([nFolds nFspcR 1 nPps])));
+ppsIdx = stack(bsxfun(@times,permute(1:nPps,[1 4 3 2]),ones([nFolds nFspcR nColl 1])));
+rTable = [foldIdx collIdx ppsIdx fspcIdx fspcsIdx log(redAll(:)-minVal)];
+save([proj0257Dir '/humanReverseCorrelation/rTables/forwardModel_redAll.mat'],'rTable')
+save([proj0257Dir '/humanReverseCorrelation/rTables/forwardModel_redAll_minVal.mat'],'minVal')
+
+% transform observed data for plotting
+allRed = reshape(permute(redAll,[1 3 4 2]),[nFolds*nColl*nPps nFspcR]);
+
+load([proj0257Dir '/humanReverseCorrelation/rModels/extractedFit_forwardModelShapeRedAll.mat'])
+
+abcFs = 16;
+abcX = -.06;
+abcY = 1;
+
+mdnWdth = .4;
+lW = 1;
+xLabelAngle = -70;
+hSpace = .5;
+
+axLims = [min(log([redAll(:)]-minVal))-.4 max(log([redAll(:)]-minVal))];
+gridVals = log([0 .05 .1 .2]-minVal);
 
 figure(106)
+subplot(3,4,1:4)
+    toSpread = log(allRed-minVal);
+    distIdx = repmat(1:nFspcR,[size(toSpread,1) 1]);
+    catIdx = stack(repmat((1:nColl),[nFolds 1 nPps*nFspcR]));
+    hps = plotSpread(toSpread,'distributionIdx',distIdx(:),'categoryIdx',catIdx,'categoryColors',jMap);
+    for ii = 1:numel(hps{1}); hps{1}{ii}.MarkerFaceAlpha = .25; end
+    hold on
+    thsMn = nanmedian(toSpread);
+    for mm = 1:numel(thsMn)
+        mh1 = plot([mm-mdnWdth mm+mdnWdth],[thsMn(mm) thsMn(mm)],'Color','k','LineWidth',lW);
+    end
+    labelStrings1 = cell(nFspcR,1);
+    for fspc = 1:nFspcR
+        
+        thsSamples = extractedFit.b(:,fspc);
+        allMAP(mapFspcLblsToCore(fspcLblTxts{fspc}),3) = getMAP(thsSamples);
+        [f,xi] = ksdensity(thsSamples(:));
+        hf = fill((f./max(f).*(2*mdnWdth)) + fspc + (-mdnWdth),xi,[0 0 0]);
+        hf.EdgeColor = 'none';
+        hf.FaceAlpha = .5;
+
+        labelStrings1{fspc} = strcat( ...
+                sprintf('%s','\color[rgb]{0 0 0}',fspcLblTxts{fspc}, ' ('), ...
+                sprintf('%s{%f %f %f}%s','\color[rgb]',cMap(fspc,:),'\bullet'), ...
+                sprintf('%s','\color[rgb]{0 0 0}' ,')'));
+    end
+    hold off
+    ylim([axLims])
+    set(gca,'YTick',gridVals,'YTickLabel',{'0','.05','.1','.2'})
+    set(gca,'YGrid','on')
+    set(gca,'YScale','linear')
+    xlim([0 nFspcR+1+hSpace])
+    set(gca,'XTick',1:nFspcR,'XTickLabel',labelStrings1,'XTickLabelRotation',xLabelAngle)
+    ylabel('Redundancy [bits]') 
+    legend([hps{1}{1,1}, hps{1}{1,2}, hps{1}{1,3}, hps{1}{1,4}, mh1, hf],'Colleague 1','Colleague 2','Colleague 3','Colleague 4', ...
+        'Pooled median','Posterior of effect \newline of feature space','NumColumns',3,'location','southwest')
+    text(abcX,abcY,Atxt,'Units', 'Normalized','FontSize',abcFs,'FontWeight',abcFontWeight)
+    
+abcX = -.15;
+abcY = 1.02;
+    
+load([proj0257Dir '/humanReverseCorrelation/rModels/hypotheses_forwardModelShapeRedAll.mat'])
+xLabelAngle2 = -60;
+ha = subaxis(3,4,[5:12],'PaddingTop',.07);
+    pp(1:1+size(pp,1):end) = 1;
+    imagesc(pp(1:nFspcR,1:nFspcR)) 
+    colormap(gca,gray)
+    caxis([0 1])
+    axis image
+    thsSz = get(ha,'Position');
+    ch = colorbar;
+    ch.Label.String = 'Fraction of samples \newline in direction of hypothesis';
+    ch.Ticks = [0 .5 1];
+    set(gca,'YTick',(1:nFspcR))
+    set(gca,'XTick',(1:nFspcR)+.5)
+    labelStrings2 = cell(nFspcR,1);
+    hold on
+    for fspc = 1:nFspcR
+        plot([fspc-.5 fspc+.5],[fspc-.5 fspc+.5],'k')
+        plot([fspc-.25 fspc+.5],[fspc-.5 fspc+.25],'k')
+        plot([fspc-0 fspc+.5],[fspc-.5 fspc+0],'k')
+        plot([fspc+.25 fspc+.5],[fspc-.5 fspc-.25],'k')
+        plot([fspc-.5 fspc+.25],[fspc-.25 fspc+.5],'k')
+        plot([fspc-.5 fspc+0],[fspc+0 fspc+.5],'k')
+        plot([fspc-.5 fspc-.25],[fspc+.25 fspc+.5],'k')
+
+        labelStrings2{fspc} = sprintf('%s{%f %f %f}%s', ...
+        '\color[rgb]',cMap(fspc,:),'\bullet');
+    end
+    hold off
+    set(gca,'YTickLabel',strcat(labelStrings2, sprintf('%s','\color[rgb]{0 0 0} > X')))
+    set(gca,'XTickLabel',strcat(labelStrings2, sprintf('%s','\color[rgb]{0 0 0} < Y')),'XTickLabelRotation',xLabelAngle2)
+    xlabel('Hypothesis')
+    ylabel('Hypothesis')
+    ha.Position = thsSz;
+    text(abcX,abcY,Btxt,'Units', 'Normalized','FontSize',abcFs,'FontWeight',abcFontWeight)
+    
+if writeToDisk
+    figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
+    fig = gcf;
+    fig.Position = [1000 1 1200 1200];
+    fig.Color = [1 1 1];
+    fig.InvertHardcopy = 'off';
+    fig.PaperUnits = 'centimeters';
+    fig.PaperPosition = [0 0 37 50];
+    fig.PaperSize = [37 50];
+    print(fig,'-dpdf',suppMatRes,[figDir 'S7_allFeatureSpaces_Redundancy_revisions.pdf'],'-opengl')
+    if closeFigures
+        close
+    end
+end
+
+%% S8 amplification tuning responses other systems
+
+figure(108)
 close 
-figure(106)
+figure(108)
 fig = gcf;
 fig.Position = [1032 82 957 1138];
 
@@ -2457,7 +2777,7 @@ subplot(3,1,1)
     plot([0 0],[1 2],'w')
     hold off
     lh = legend(hl,sysTxts,'location','north','NumColumns',3);
-    lh.Position = lh.Position + [0.06 -.00 0 0];
+    lh.Position = lh.Position + [0.08 -.00 0 0];
     legend boxoff
     ylabel(['Predicted ratings \newline [normalized, median \pm95%CI]']);
     text(abcX,abcY,Atxt,'Units', 'Normalized','FontSize',abcFs,'FontWeight',abcFontWeight)
@@ -2493,7 +2813,7 @@ subplot(3,1,2)
     plot([0 0],[1 2],'w')
     hold off
     lh = legend(hl,sysTxts,'location','north','NumColumns',3);
-    lh.Position = lh.Position + [.2 -.000 0 0];
+    lh.Position = lh.Position + [.235 -.000 0 0];
     legend boxoff
     ylabel(['Predicted ratings \newline [normalized, median \pm95%CI]']);
     text(abcX,abcY,Btxt,'Units', 'Normalized','FontSize',abcFs,'FontWeight',abcFontWeight)
@@ -2534,21 +2854,29 @@ subplot(3,1,3)
     set(gca,'YTick',[0 1])
     set(gca,'XTick',[0 50])
 
-figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
-fig = gcf;
-fig.Position = [1032 82 957 1138];
-fig.Color = [1 1 1];
-fig.InvertHardcopy = 'off';
-fig.PaperUnits = 'centimeters';
-fig.PaperPosition = [0 0 30 40];
-fig.PaperSize = [30 40];
-print(fig,'-dpdf','-r300',[figDir 'S6_amplificationTuningResponsesDistanceSystems.pdf'],'-opengl')
+if writeToDisk
+    figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
+    fig = gcf;
+    fig.Position = [1032 82 957 1138];
+    fig.Color = [1 1 1];
+    fig.InvertHardcopy = 'off';
+    fig.PaperUnits = 'centimeters';
+    fig.PaperPosition = [0 0 30 40];
+    fig.PaperSize = [30 40];
+    print(fig,'-dpdf',suppMatRes,[figDir 'S8_amplificationTuningResponsesDistanceSystems.pdf'],'-opengl')
+    if closeFigures
+        close
+    end
+end
     
-%% S7 all systems reverse correlation evaluation
+%% S9 all systems reverse correlation evaluation
 %humanness, error
 
 load('/analyse/Project0257/humanReverseCorrelation/comparisonReconOrig/compReconOrig_wPanel_respHat_new.mat')
 
+sysTypes = {'texture_{eucFit}','shape_{eucFit}','pixelPCAwAng_{eucFit}', ...
+    'Triplet_{eucFit}','ClassID_{eucFit}','ClassMulti_{eucFit}','AE_{eucFit}', ...
+        'viAE10_{eucFit}','VAE_{eucFit}'};
 fspcLblTxts = {'Human','Texture','Shape','pixelPCA', ...
     'Triplet_{emb}','ClassID_{emb}','ClassMulti_{emb}','AE_{emb}','viAE_{emb}','VAE_{emb}', ...
     'Texture_{\delta}','Shape_{\delta}','pixelPCA_{\delta}','Triplet_{\delta}','ClassID_{\delta}','ClassMulti_{\delta}','AE_{\delta}','viAE_{\delta}','VAE_{\delta}', ...
@@ -2564,9 +2892,9 @@ cMap1 = cMap([1:9 17:25 28:40],:);
 tmpMap = distinguishable_colors(50);
 jMap = tmpMap([45 47 48 49],:);
 
-figure(107)
+figure(109)
 close 
-figure(107)
+figure(109)
 fig = gcf;
 fig.Position = [1000 10 1000 1200];
 
@@ -2594,7 +2922,7 @@ abcY = 1;
 mdnWdth = .4;
 subaxis(3,4,[1:4]);
     toSpread = stack2(permute(mean(eucDistHumHumhat(relVert,:,2:end,1:14)),[3 2 4 1]))';
-    catIdx = repmat((1:4)',[14 numel(sysTypes)-1]);
+    catIdx = repmat((1:4)',[14 numel(fspcLblTxts)-1]);
     hps = plotSpread(toSpread,'categoryIdx',catIdx(:),'categoryColors',jMap);
     for ii = 1:numel(hps{1}); hps{1}{ii}.MarkerFaceAlpha = .25; end
     thsMn = nanmedian(toSpread);
@@ -2605,6 +2933,7 @@ subaxis(3,4,[1:4]);
     labelStrings1 = cell(nFspc1,1);
     for fspc = 1:nFspc1
         thsSamples = exp(extractedFit.b(:,fspc));
+        allMAP(mapFspcLblsToCore(fspcLblTxts{fspc+1}),4) = getMAP(log(thsSamples));
         [f,xi] = ksdensity(thsSamples(:));
         hf = fill((f./max(f).*(2*mdnWdth)) + (fspc-1)*1+.5+(.5-mdnWdth),xi,[0 0 0]);
         hf.EdgeColor = 'none';
@@ -2617,8 +2946,8 @@ subaxis(3,4,[1:4]);
     end
     hold off
     set(gca,'YScale','log')
-    set(gca,'XTick',1:numel(sysTypes(2:end)),'XTickLabel',labelStrings1,'XTickLabelRotation',-60)
-    xlim([0 numel(sysTypes)])
+    set(gca,'XTick',1:numel(fspcLblTxts(2:end)),'XTickLabel',labelStrings1,'XTickLabelRotation',-60)
+    xlim([0 numel(fspcLblTxts)-.5])
     title('Humanness, MAE')
     ylabel('MAE [mm]')
     lh = legend([hps{1}{1,1}, hps{1}{1,2}, hps{1}{1,3}, hps{1}{1,4}, mh1, hf],'Colleague 1','Colleague 2','Colleague 3','Colleague 4', ...
@@ -2665,20 +2994,28 @@ ha = subaxis(3,4,[5:12],'PaddingTop',.07);
     ha.Position = thsSz;
     text(abcX,abcY,Btxt,'Units', 'Normalized','FontSize',abcFs,'FontWeight',abcFontWeight)
     
-figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
-fig = gcf;
-fig.Position = [1000 10 1000 1200];
-fig.Color = [1 1 1];
-fig.InvertHardcopy = 'off';
-fig.PaperUnits = 'centimeters';
-fig.PaperPosition = [0 0 40 50];
-fig.PaperSize = [40 50];
-print(fig,'-dpdf','-r300',[figDir 'S7_RCevaluationAll_HumannessMAE.pdf'],'-opengl')
+if writeToDisk
+    figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
+    fig = gcf;
+    fig.Position = [1000 10 1000 1200];
+    fig.Color = [1 1 1];
+    fig.InvertHardcopy = 'off';
+    fig.PaperUnits = 'centimeters';
+    fig.PaperPosition = [0 0 40 50];
+    fig.PaperSize = [40 50];
+    print(fig,'-dpdf',suppMatRes,[figDir 'S9_RCevaluationAll_HumannessMAE.pdf'],'-opengl')
+    if closeFigures
+        close
+    end
+end
 
-%% S8 all systems reverse correlation evaluation
-% S8, humanness, corr
+%% S10 all systems reverse correlation evaluation
+% S10, humanness, corr
 load('/analyse/Project0257/humanReverseCorrelation/comparisonReconOrig/compReconOrig_wPanel_respHat_new.mat')
 
+sysTypes = {'texture_{eucFit}','shape_{eucFit}','pixelPCAwAng_{eucFit}', ...
+    'Triplet_{eucFit}','ClassID_{eucFit}','ClassMulti_{eucFit}','AE_{eucFit}', ...
+        'viAE10_{eucFit}','VAE_{eucFit}'};
 fspcLblTxts = {'Human','Texture','Shape','pixelPCA', ...
     'Triplet_{emb}','ClassID_{emb}','ClassMulti_{emb}','AE_{emb}','viAE_{emb}','VAE_{emb}', ...
     'Texture_{\delta}','Shape_{\delta}','pixelPCA_{\delta}','Triplet_{\delta}','ClassID_{\delta}','ClassMulti_{\delta}','AE_{\delta}','viAE_{\delta}','VAE_{\delta}', ...
@@ -2694,9 +3031,9 @@ cMap1 = cMap([1:9 19 18 17 20:25 30 29 28 31:40],:);
 tmpMap = distinguishable_colors(50);
 jMap = tmpMap([45 47 48 49],:);
 
-figure(108)
+figure(110)
 close 
-figure(108)
+figure(110)
 fig = gcf;
 fig.Position = [1000 10 1000 1200];
 
@@ -2726,7 +3063,7 @@ abcY = 1;
 %humanness, correlation
 subaxis(3,4,[1:4]);
     toSpread = stack2(permute(corrsHumhatShaV(:,2:end,1:14),[2 3 1]))';
-    catIdx = repmat((1:4)',[14 numel(sysTypes)-1]);
+    catIdx = repmat((1:4)',[14 numel(fspcLblTxts)-1]);
     hps = plotSpread(toSpread,'categoryIdx',catIdx(:),'categoryColors',jMap);
     for ii = 1:numel(hps{1}); hps{1}{ii}.MarkerFaceAlpha = .25; end
     thsMn = nanmedian(toSpread);
@@ -2734,6 +3071,7 @@ subaxis(3,4,[1:4]);
     labelStrings1 = cell(nFspc1,1);
     for fspc = 1:nFspc1
         thsSamples = tanh(extractedFit.b(:,fspc));
+        allMAP(mapFspcLblsToCore(fspcLblTxts{fspc+1}),5) = getMAP(thsSamples);
         [f,xi] = ksdensity(thsSamples(:));
         hf = fill((f./max(f).*(2*mdnWdth)) + (fspc-1)*1+.5+(.5-mdnWdth),xi,[0 0 0]);
         hf.EdgeColor = 'none';
@@ -2749,7 +3087,7 @@ subaxis(3,4,[1:4]);
     end
     hold off
     set(gca,'XTick',1:numel(fspcLblTxts(2:end)),'XTickLabel',labelStrings1,'XTickLabelRotation',-60)
-    xlim([0 numel(fspcLblTxts)])
+    xlim([0 numel(fspcLblTxts)-.5])
     ylabel('\rho')
     title('Humanness, Correlation')
     ylim([-1 1])
@@ -2794,18 +3132,23 @@ ha = subaxis(3,4,[5:12],'PaddingTop',.07);
     ha.Position = thsSz;
     text(abcX,abcY,Btxt,'Units', 'Normalized','FontSize',abcFs,'FontWeight',abcFontWeight)
     
-figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
-fig = gcf;
-fig.Position = [1000 10 1000 1200];
-fig.Color = [1 1 1];
-fig.InvertHardcopy = 'off';
-fig.PaperUnits = 'centimeters';
-fig.PaperPosition = [0 0 40 50];
-fig.PaperSize = [40 50];
-print(fig,'-dpdf','-r300',[figDir 'S8_RCevaluationAll_HumannessCorr.pdf'],'-opengl')
+if writeToDisk
+    figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
+    fig = gcf;
+    fig.Position = [1000 10 1000 1200];
+    fig.Color = [1 1 1];
+    fig.InvertHardcopy = 'off';
+    fig.PaperUnits = 'centimeters';
+    fig.PaperPosition = [0 0 40 50];
+    fig.PaperSize = [40 50];
+    print(fig,'-dpdf',suppMatRes,[figDir 'S10_RCevaluationAll_HumannessCorr.pdf'],'-opengl')
+    if closeFigures
+        close
+    end
+end
 
-%% S9 all systems reverse correlation evaluation
-% S9, Veridicality, MAE
+%% S11 all systems reverse correlation evaluation
+% S11, Veridicality, MAE
 
 fspcLblTxts = {'Human','Texture','Shape','pixelPCA', ...
     'Triplet_{emb}','ClassID_{emb}','ClassMulti_{emb}','AE_{emb}','viAE_{emb}','VAE_{emb}', ...
@@ -2822,9 +3165,9 @@ cMap2 = [[0 0 0]; cMap([1:9 17:25 28:40],:)];
 tmpMap = distinguishable_colors(50);
 jMap = tmpMap([45 47 48 49],:);
 
-figure(109)
+figure(111)
 close 
-figure(109)
+figure(111)
 fig = gcf;
 fig.Position = [1000 10 1000 1200];
 
@@ -2853,14 +3196,16 @@ abcY = 1;
 %veridicality, error
 subaxis(3,4,[1:4]);
     toSpread = (stack2(permute(mean(eucDistOrigRecon(relVert,:,:,1:14)),[3 2 4 1]))');
-    catIdx = repmat((1:4)',[14 numel(sysTypes)]);
+    catIdx = repmat((1:4)',[14 numel(fspcLblTxts)]);
     hps = plotSpread(toSpread,'categoryIdx',catIdx(:),'categoryColors',jMap);
     for ii = 1:numel(hps{1}); hps{1}{ii}.MarkerFaceAlpha = .25; end
     thsMn = nanmedian(toSpread);
     hold on
     labelStrings1 = cell(nFspc2,1);
     for fspc = 1:nFspc2
+        humSamples = extractedFit.b(:,find(strcmp(fspcLblTxts,'Human'))); 
         thsSamples = exp(extractedFit.b(:,fspc));
+        allMAP(mapFspcLblsToCore(fspcLblTxts{fspc}),6) = abs(getMAP(log(thsSamples)) - getMAP(humSamples));
         [f,xi] = ksdensity(thsSamples(:));
         hf = fill((f./max(f).*(2*mdnWdth)) + (fspc-1)*1+.5+(.5-mdnWdth),xi,[0 0 0]);
         hf.EdgeColor = 'none';
@@ -2875,8 +3220,8 @@ subaxis(3,4,[1:4]);
     plot([mm-mdnWdth mm+mdnWdth],[thsMn(mm) thsMn(mm)],'Color','k');
     end
     hold off
-    set(gca,'XTick',1:numel(sysTypes),'XTickLabel',labelStrings1,'XTickLabelRotation',-60)
-    xlim([0 numel(sysTypes)+.5])
+    set(gca,'XTick',1:numel(fspcLblTxts),'XTickLabel',labelStrings1,'XTickLabelRotation',-60)
+    xlim([0 numel(fspcLblTxts)+.5])
     set(gca,'YScale','log')
     ylabel('MAE [mm]')
     title('Veridicality, MAE')
@@ -2920,18 +3265,23 @@ ha = subaxis(3,4,[5:12],'PaddingTop',.07);
     ha.Position = thsSz;
     text(abcX,abcY,Btxt,'Units', 'Normalized','FontSize',abcFs,'FontWeight',abcFontWeight)
     
-figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
-fig = gcf;
-fig.Position = [1000 10 1000 1200];
-fig.Color = [1 1 1];
-fig.InvertHardcopy = 'off';
-fig.PaperUnits = 'centimeters';
-fig.PaperPosition = [0 0 40 50];
-fig.PaperSize = [40 50];
-print(fig,'-dpdf','-r300',[figDir 'S9_RCevaluationAll_VeridicalityMAE.pdf'],'-opengl')
+if writeToDisk
+    figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
+    fig = gcf;
+    fig.Position = [1000 10 1000 1200];
+    fig.Color = [1 1 1];
+    fig.InvertHardcopy = 'off';
+    fig.PaperUnits = 'centimeters';
+    fig.PaperPosition = [0 0 40 50];
+    fig.PaperSize = [40 50];
+    print(fig,'-dpdf',suppMatRes,[figDir 'S11_RCevaluationAll_VeridicalityMAE.pdf'],'-opengl')
+    if closeFigures
+        close
+    end
+end
 
-%% S10 all systems reverse correlation evaluation
-% S10 Veridicality, corr
+%% S12 all systems reverse correlation evaluation
+% S12 Veridicality, corr
     
 fspcLblTxts = {'Human','Texture','Shape','pixelPCA', ...
     'Triplet_{emb}','ClassID_{emb}','ClassMulti_{emb}','AE_{emb}','viAE_{emb}','VAE_{emb}', ...
@@ -2948,9 +3298,9 @@ cMap2 = [[0 0 0]; cMap([1:9 17:25 28:40],:)];
 tmpMap = distinguishable_colors(50);
 jMap = tmpMap([45 47 48 49],:);
 
-figure(110)
+figure(112)
 close 
-figure(110)
+figure(112)
 fig = gcf;
 fig.Position = [1000 10 1000 1200];
 
@@ -2986,7 +3336,9 @@ subaxis(3,4,[1:4]);
     hold on
     labelStrings1 = cell(nFspc2,1);
     for fspc = 1:nFspc2
+        humSamples = extractedFit.b(:,find(strcmp(fspcLblTxts,'Human')));
         thsSamples = tanh(extractedFit.b(:,fspc));
+        allMAP(mapFspcLblsToCore(fspcLblTxts{fspc}),7) = abs(getMAP(thsSamples) - getMAP(humSamples));
         [f,xi] = ksdensity(thsSamples(:));
         hf = fill((f./max(f).*(2*mdnWdth)) + (fspc-1)*1+.5+(.5-mdnWdth),xi,[0 0 0]);
         hf.EdgeColor = 'none';
@@ -3047,21 +3399,26 @@ ha = subaxis(3,4,[5:12],'PaddingTop',.07);
     ha.Position = thsSz;
     text(abcX,abcY,Btxt,'Units', 'Normalized','FontSize',abcFs,'FontWeight',abcFontWeight)
 
-figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
-fig = gcf;
-fig.Position = [1000 10 1000 1200];
-fig.Color = [1 1 1];
-fig.InvertHardcopy = 'off';
-fig.PaperUnits = 'centimeters';
-fig.PaperPosition = [0 0 40 50];
-fig.PaperSize = [40 50];
-print(fig,'-dpdf','-r300',[figDir 'S10_RCevaluationAll_VeridicalityCorr.pdf'])
+if writeToDisk
+    figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
+    fig = gcf;
+    fig.Position = [1000 10 1000 1200];
+    fig.Color = [1 1 1];
+    fig.InvertHardcopy = 'off';
+    fig.PaperUnits = 'centimeters';
+    fig.PaperPosition = [0 0 40 50];
+    fig.PaperSize = [40 50];
+    print(fig,'-dpdf',suppMatRes,[figDir 'S12_RCevaluationAll_VeridicalityCorr.pdf'])
+    if closeFigures
+        close
+    end
+end
 
-%% S11 reverse correlated other 3 colleagues
+%% S13 reverse correlated other 3 colleagues
 
-figure(111)
+figure(113)
 close
-figure(111)
+figure(113)
 fig = gcf;
 fig.Position = [1273 10 1000 1200];
 
@@ -3131,17 +3488,22 @@ for gg = 1:2
     end
 end
 
-figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
-fig = gcf;
-fig.Position = [1273 10 1000 1200];
-fig.Color = [1 1 1];
-fig.InvertHardcopy = 'off';
-fig.PaperUnits = 'centimeters';
-fig.PaperPosition = [0 0 40 50];
-fig.PaperSize = [40 50];
-print(fig,'-dpdf','-r300',[figDir 'S11_other3ColleaguesRC.pdf'],'-opengl')
+if writeToDisk
+    figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
+    fig = gcf;
+    fig.Position = [1273 10 1000 1200];
+    fig.Color = [1 1 1];
+    fig.InvertHardcopy = 'off';
+    fig.PaperUnits = 'centimeters';
+    fig.PaperPosition = [0 0 40 50];
+    fig.PaperSize = [40 50];
+    print(fig,'-dpdf',suppMatRes,[figDir 'S13_other3ColleaguesRC.pdf'],'-opengl')
+    if closeFigures
+        close
+    end
+end
 
-%% S12 generalisation testing all systems
+%% S14 generalisation testing all systems
 % 1 euclidean distance models
 
 abcFs = 20;
@@ -3171,9 +3533,9 @@ sysTxts = {'Texture','Shape','pixelPCA', ...
            '\beta=2 VAE_{emb}','\beta=5 VAE_{emb}','\beta=10 VAE_{emb}','\beta=20 VAE_{emb}', ...
            'ClassID_{dn}','ClassMulti_{dn}','VAE_{ldn}','VAE_{nldn}'};
 
-figure(112)
+figure(114)
 close
-figure(112)
+figure(114)
 fig = gcf;
 fig.Position = [1000 1 1200 1200];
 
@@ -3236,6 +3598,7 @@ for sss = 1:numel(sysSubSels)
 
         for fspc = 1:nFspc
             thsSamples = taskSamples(:,fspc);
+            allMAP(mapFspcLblsToCore(sysTxts{sysSubSels{sss}(fspc)}),7+tt) = getMAP(thsSamples)-mean(stack(sum(allAccDelta(tt,:,:,1:14,sysSubSels{sss}(fspc)))));
             [f(:,fspc),xi(:,fspc)] = ksdensity(thsSamples(:));
         end
 
@@ -3278,17 +3641,22 @@ for sss = 1:numel(sysSubSels)
     end
 end
 
-figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
-fig = gcf;
-fig.Position = [1000 1 1200 1200];
-fig.Color = [1 1 1];
-fig.InvertHardcopy = 'off';
-fig.PaperUnits = 'centimeters';
-fig.PaperPosition = [0 0 35 50];
-fig.PaperSize = [35 50];
-print(fig,'-dpdf','-r300',[figDir 'S12_generalisationTestingAllTraces&Distributions.pdf'],'-opengl')
+if writeToDisk
+    figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
+    fig = gcf;
+    fig.Position = [1000 1 1200 1200];
+    fig.Color = [1 1 1];
+    fig.InvertHardcopy = 'off';
+    fig.PaperUnits = 'centimeters';
+    fig.PaperPosition = [0 0 35 50];
+    fig.PaperSize = [35 50];
+    print(fig,'-dpdf',suppMatRes,[figDir 'S14_generalisationTestingAllTraces&Distributions.pdf'],'-opengl')
+    if closeFigures
+        close
+    end
+end
 
-%% S13 - S17 hypotheses testing for generalisation testing all systems
+%% S15 - S19 hypotheses testing for generalisation testing all systems
 
 abcFs = 20;
 abcX = -.15;
@@ -3317,9 +3685,9 @@ allNFspc = [35 35 35 35 35];
 
 for tt = 1:5
     
-    figure(112+tt)
+    figure(114+tt)
     close 
-    figure(112+tt)
+    figure(114+tt)
     
     nFspc = allNFspc(tt);
     
@@ -3364,20 +3732,81 @@ for tt = 1:5
         title(taskTxt{tt})
         
         text(.05,-.3,labelStrings1(sysSubSels{1}),'Units','normalized')
-        text(.25,-.3,labelStrings1(sysSubSels{2}),'Units','normalized')
-        text(.45,-.3,labelStrings1(sysSubSels{3}),'Units','normalized')
+        text(.3,-.3,labelStrings1(sysSubSels{2}),'Units','normalized')
+        text(.55,-.3,labelStrings1(sysSubSels{3}),'Units','normalized')
         if nFspc > 27
-            text(.65,-.3,labelStrings1(sysSubSels{4}),'Units','normalized')
+            text(.8,-.3,labelStrings1(sysSubSels{4}),'Units','normalized')
         end
         
-        
+        if writeToDisk
+            figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
+            fig = gcf;
+            fig.Position = [1000 1 1200 1200];
+            fig.Color = [1 1 1];
+            fig.InvertHardcopy = 'off';
+            fig.PaperUnits = 'centimeters';
+            fig.PaperPosition = [0 0 35 50];
+            fig.PaperSize = [35 50];
+            print(fig,'-dpdf',suppMatRes,[figDir 'S' num2str(14+tt) '_generalisationTesting_hypotheses_T' num2str(tt) '.pdf'],'-opengl')
+            if closeFigures
+                close
+            end
+        end
+end
+
+%% S20 ranking of all comparisons
+
+figure(120)
+close
+figure(120)
+fig = gcf;
+fig.Position = [1273 10 800 1200];
+
+comparisonLblTxts = {'Accuracy choice','MI ratings','Redundancy with shape', ...
+    'Reverse correlation humanness MAE','Reverse correlation humanness \rho', ...
+    'Reverse correlation veridicality MAE','Reverse correlation veridicality \rho', ...
+    'Generalization testing -30°','Generalization testing 0°','Generalization testing +30°', ...
+    'Generalization testing 80 years old','Generalization testing opposite sex','Overall score'};
+
+% scale all values between 0 and 1
+allMAPperc = bsxfun(@minus,allMAP,min(allMAP));
+allMAPperc = bsxfun(@rdivide,allMAPperc,max(allMAPperc));
+% recode error dimensions such that high values become favourable
+allMAPperc(:,[4 6:12]) = -allMAPperc(:,[4 6:12])+1;
+% table has 1 NaN -- shape redundancy cannot be measured. Replace with 1.
+allMAPperc(isnan(allMAPperc)) = 1;
+% obtain ranking
+[thsRanking,rankIdx] = sort(nansum(allMAPperc,2),'descend');
+
+toPlot = [allMAPperc(rankIdx,:) thsRanking./size(allMAP,2)];
+
+imagesc(toPlot); colormap(gray); 
+ch = colorbar;
+ch.Label.String = '% of best performing score';
+ch.Ticks = [0 .5 1];
+axis image
+hold on
+plot([size(allMAP,2) size(allMAP,2)]+.5,[0 size(allMAP,1)]+.5,'Color',[0 0 1])
+hold off
+thsLabels = cell(size(allMAP,1),1);
+for ii = 1:size(allMAP,1)
+   thsLabels{ii} = [num2str(ii) '. ' mapFspcLblsToCore(coreFspcs(rankIdx(ii)),'direction','core2label')];
+end
+set(gca,'YTick',1:numel(coreFspcs),'YTickLabel',thsLabels)
+
+set(gca,'XTick',1:numel(comparisonLblTxts)+1,'XTickLabel',comparisonLblTxts,'XTickLabelRotation',-60)
+
+if writeToDisk
     figDir = '/home/chrisd/ownCloud/FiguresDlFace/';
     fig = gcf;
-    fig.Position = [1000 1 1200 1200];
+    fig.Position = [1273 10 800 1200];
     fig.Color = [1 1 1];
     fig.InvertHardcopy = 'off';
     fig.PaperUnits = 'centimeters';
     fig.PaperPosition = [0 0 35 50];
     fig.PaperSize = [35 50];
-    print(fig,'-dpdf','-r300',[figDir 'S' num2str(12+tt) '_generalisationTesting_hypotheses_T' num2str(tt) '.pdf'],'-opengl')
+    print(fig,'-dpdf',suppMatRes,[figDir 'S20_rankingAllComparisons.pdf'],'-opengl')
+    if closeFigures
+        close
+    end
 end

@@ -198,7 +198,6 @@ print(fig,'-dpng','-r300',[figDir 'cpa_ratings_pairwise_R2.png'])
 %%
 
 % get cpa
-ss = 15;
 cpar = zeros(nTrials,nColl);
 cpac = zeros(nTrials,nColl);
 nps = zeros(nTrials,nColl);
@@ -234,8 +233,6 @@ fig.PaperUnits = 'centimeters';
 fig.PaperPosition = [0 0 20 20];
 fig.PaperSize = [20 20];
 print(fig,'-dpng','-r300',[figDir 'cpa_mode_histogram.png'])
-
-save([proj0257Dir 'humanReverseCorrelation/fromJiayu/cpa.mat'],'cpar','cpac','cpaChosenRow','cpaChosenCol','cpaFileNames')
 
 %% after having trained forward models on cpa, plot performances of that
 
@@ -318,6 +315,8 @@ lopocpaCorrP = zeros(nPerms,nPps,nColl);
 lopocpaMI = zeros(nPps,nColl);
 lopocpaMIp = zeros(nPps,nColl);
 
+allLopocpaR = zeros(nTrials,nColl,nPps);
+
 for ss = 1:nPps
    
     % select all but 1 participant
@@ -331,6 +330,8 @@ for ss = 1:nPps
     % same choice as held-out participant (only in a few trials, none of
     % the participants agreed with the held out participant)
     lopocpa = nanmean(allRatings(:,thsPart,:).*thsMask,2);
+    
+    allLopocpaR(:,:,ss) = lopocpa;
     
     for co = 1:nColl
         
@@ -368,6 +369,9 @@ for ss = 1:nPps
     end
     
 end
+
+save([proj0257Dir 'humanReverseCorrelation/fromJiayu/cpa.mat'], ...
+    'cpar','cpac','cpaChosenRow','cpaChosenCol','cpaFileNames','allLopocpaR')
 
 %% plot results for leave-one-participant-out-cross-participant-average
 

@@ -127,7 +127,7 @@ chosenRow = zeros(nTrials,4,numel(pps)+1,1+nArtSys);
 chosenCol = zeros(nTrials,4,numel(pps)+1,1+nArtSys);
 systemsRatings = zeros(nTrials,4,numel(pps)+1,1+nArtSys);
 
-for ss = 1:15
+for ss = 1:29
 
     for gg = 1:2
         
@@ -164,7 +164,7 @@ for ss = 1:15
                 thsChosenImgs = thsChosenImgs(trialIdx);
 
                 thsResps = cat(1,thsData{trialIdx,9});
-            else
+            elseif ss > 14
                 fileNames(:,thsCollId,ss) = cpaFileNames(:,thsCollId);
             end
             
@@ -178,12 +178,20 @@ for ss = 1:15
                     chosenRow(tt,thsCollId,ss,1) = rowColMap(chosenImages(tt,thsCollId,ss),1);
                     % save current human response
                     systemsRatings(tt,thsCollId,ss,1) = str2double(thsResps(tt));
-                else
+                elseif ss == 15
                     chosenImages(tt,thsCollId,ss,1) = cpac(tt,thsCollId);
                     chosenCol(tt,thsCollId,ss,1) = cpaChosenCol(tt,thsCollId);
                     chosenRow(tt,thsCollId,ss,1) = cpaChosenRow(tt,thsCollId);
                     % save current cpa response
                     systemsRatings(tt,thsCollId,ss,1) = cpar(tt,thsCollId);
+                elseif ss > 15
+                    % get trial number of given file
+                    thsT = find(fileNames(:,thsCollId,ss-15)==tt);
+                    chosenImages(tt,thsCollId,ss,1) = chosenImages(thsT,thsCollId,ss-15,1);
+                    chosenCol(tt,thsCollId,ss,1) = chosenCol(thsT,thsCollId,ss-15,1);
+                    chosenRow(tt,thsCollId,ss,1) = chosenRow(thsT,thsCollId,ss-15,1);
+                    % save current lopocpa response (already in order of files)
+                    systemsRatings(tt,thsCollId,ss,1) = allLopocpaR(tt,thsCollId,ss-15);
                 end
                 
                 for nn = 1:nNets
@@ -196,18 +204,6 @@ for ss = 1:15
                     chosenImages(tt,thsCollId,ss,1+nn) = thsTrialPos;
                     % save current net chosen row and column
                     [chosenCol(tt,thsCollId,ss,1+nn),chosenRow(tt,thsCollId,ss,1+nn)] = ind2sub([3,2],thsTrialPos);
-                end
-                
-                for nh = 1:nSysHat
-                    % look at panel of 6 in current trial (in chronological order) 
-                    % for current id and gg in current net
-                    [thsTrialRating,thsTrialPos] = max(stack(sysHatDists(fileNames(tt,thsCollId,ss),:,:,id,gg,ss,nh)));
-                    % save current net response 
-                    systemsRatings(tt,thsCollId,ss,1+nNets+nh) = thsTrialRating;
-                    % save current net chosen image
-                    chosenImages(tt,thsCollId,ss,1+nNets+nh) = thsTrialPos;
-                    % save current net chosen row and column
-                    [chosenCol(tt,thsCollId,ss,1+nNets+nh),chosenRow(tt,thsCollId,ss,1+nNets+nh)] = ind2sub([3,2],thsTrialPos);
                 end
                 
                 for io = 1:nIO
@@ -223,17 +219,31 @@ for ss = 1:15
                         chosenRow(tt,thsCollId,ss,1+nNets+nSysHat+io)] = ind2sub([3,2],thsTrialPos);
                 end
                 
-                for ed = 1:nED
-                    % look at panel of 6 in current trial (in chronological order) 
-                    % for current id and gg in current net
-                    [thsTrialRating,thsTrialPos] = max(stack(extraDists(fileNames(tt,thsCollId,ss),:,:,id,gg,ss,ed)));
-                    % save current net response 
-                    systemsRatings(tt,thsCollId,ss,1+nNets+nSysHat+nIO+ed) = thsTrialRating;
-                    % save current net chosen image
-                    chosenImages(tt,thsCollId,ss,1+nNets+nSysHat+nIO+ed) = thsTrialPos;
-                    % save current net chosen row and column
-                    [chosenCol(tt,thsCollId,ss,1+nNets+nSysHat+nIO+ed), ...
-                        chosenRow(tt,thsCollId,ss,1+nNets+nSysHat+nIO+ed)] = ind2sub([3,2],thsTrialPos);
+                if ss < 16
+                    for nh = 1:nSysHat
+                        % look at panel of 6 in current trial (in chronological order) 
+                        % for current id and gg in current net
+                        [thsTrialRating,thsTrialPos] = max(stack(sysHatDists(fileNames(tt,thsCollId,ss),:,:,id,gg,ss,nh)));
+                        % save current net response 
+                        systemsRatings(tt,thsCollId,ss,1+nNets+nh) = thsTrialRating;
+                        % save current net chosen image
+                        chosenImages(tt,thsCollId,ss,1+nNets+nh) = thsTrialPos;
+                        % save current net chosen row and column
+                        [chosenCol(tt,thsCollId,ss,1+nNets+nh),chosenRow(tt,thsCollId,ss,1+nNets+nh)] = ind2sub([3,2],thsTrialPos);
+                    end
+
+                    for ed = 1:nED
+                        % look at panel of 6 in current trial (in chronological order) 
+                        % for current id and gg in current net
+                        [thsTrialRating,thsTrialPos] = max(stack(extraDists(fileNames(tt,thsCollId,ss),:,:,id,gg,ss,ed)));
+                        % save current net response 
+                        systemsRatings(tt,thsCollId,ss,1+nNets+nSysHat+nIO+ed) = thsTrialRating;
+                        % save current net chosen image
+                        chosenImages(tt,thsCollId,ss,1+nNets+nSysHat+nIO+ed) = thsTrialPos;
+                        % save current net chosen row and column
+                        [chosenCol(tt,thsCollId,ss,1+nNets+nSysHat+nIO+ed), ...
+                            chosenRow(tt,thsCollId,ss,1+nNets+nSysHat+nIO+ed)] = ind2sub([3,2],thsTrialPos);
+                    end
                 end
                 
             end
